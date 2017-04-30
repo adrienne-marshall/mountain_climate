@@ -10,21 +10,21 @@ source("exclusions_fn.R")
 
 #Do the search - only get 100 for now. 
 
-papers <- cr_works(query.bibliographic =  "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' 
+papers <- cr_works(query =  "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' 
 +'mountainous' +'headwater'  +'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake' +'salmon' +'clearwater' +'spokane' +'kootenai' +'Pacific Northwest' +'Western United States' +'Columbia River Basin'",
                    filter = c(type = "journal-article"),
                    limit=1000)
 
-papers1 <- cr_works(query.bibliographic = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' 
+papers1 <- cr_works(query = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' 
 +'mountainous' +'headwater'+'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake' +'salmon' +'clearwater' +'spokane' +'kootenai' +'Pacific Northwest' + 'willamette river'+ 'clark fork river'+ 'john day river'+ 'sandy river'+ 'lewis river'+ 'methow'+ 'white salmon'+'Western United States' +'Columbia River Basin'",  
                     filter = c(type = "journal-article"),
                    limit=1000)
 
-papers2 <- cr_works(query.bibliographic = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine'+'mountainous'+'snow dominant'+'headwater'+'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake' +'salmon' +'clearwater' +'spokane' +'kootenai' +'Pacific Northwest' + 'willamette'+ 'clark fork'+ 'john day'+ 'sandy'+ 'lewis'+ 'methow'+ 'white salmon'+'Western United States' +'Columbia River Basin'",      
+papers2 <- cr_works(query = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine'+'mountainous'+'snow dominant'+'headwater'+'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake' +'salmon' +'clearwater' +'spokane' +'kootenai' +'Pacific Northwest' + 'willamette'+ 'clark fork'+ 'john day'+ 'sandy'+ 'lewis'+ 'methow'+ 'white salmon'+'Western United States' +'Columbia River Basin'",      
                     filter = c(type = "journal-article"),
                     limit=1000)
 
-papers3 <- cr_works(query.bibliographic = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' +'mountainous'+'snowdominant'+'headwater'+'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake' +'salmon' +'clearwater' +'spokane' +'kootenai' +'Pacific Northwest' +'willamette' +'clark fork'+ 'john day'+ 'sandy'+ 'lewis'+ 'methow'+ 'white salmon'+'Western United States' +'Columbia River Basin'+ 'cascade'+'blue'+'selkirk'+'purcell'+'wallowa'+'teton'+'rocky'+'bitterroot'+ 'rockies'",
+papers3 <- cr_works(query = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' +'mountainous'+'snowdominant'+'headwater'+'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake' +'salmon' +'clearwater' +'spokane' +'kootenai' +'Pacific Northwest' +'willamette' +'clark fork'+ 'john day'+ 'sandy'+ 'lewis'+ 'methow'+ 'white salmon'+'Western United States' +'Columbia River Basin'+ 'cascade'+'blue'+'selkirk'+'purcell'+'wallowa'+'teton'+'rocky'+'bitterroot'+ 'rockies'",
                     filter = c(type = "journal-article"),
                     limit=1000)
 
