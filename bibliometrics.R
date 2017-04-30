@@ -4,7 +4,8 @@
 
 #install.packages("bibliometrix")
 library(bibliometrix)
-D <- readLines("savedrecs.bib")
+D <- readLines("data/test.bib")
+
 
 #Convert to a data frame.
 M <- convert2df(D, dbsource = "isi", format = "bibtex")
@@ -17,7 +18,7 @@ S=summary(object = results, k = 10, pause = FALSE)
 A <- cocMatrix(M, Field = "SO", sep = ";")
 sort(Matrix::colSums(A), decreasing = TRUE)[1:5]
 
-NetMatrix <- biblioNetwork(M, analysis = "coupling", network = "sources", sep = ";")
+NetMatrix <- biblioNetwork(M, analysis = "collaboration", network = "authors", sep = ";")
 
 # calculate jaccard similarity coefficient
 S <- couplingSimilarity(NetMatrix, type="jaccard")
@@ -33,7 +34,7 @@ H <- heatmap(max(NETMAP)-as.matrix(NETMAP),symm=T, cexRow=0.3,cexCol=0.3)
 
 #install.packages("igraph") -------------------------------------------
 M <- metaTagExtraction(M, Field = "AU_CO", sep = ";")
-NetMatrix <- biblioNetwork(M, analysis = "collaboration", network = "countries", sep = ";")
+NetMatrix <- biblioNetwork(M, analysis = "collaboration", network = "authors", sep = ";")
 
 # define functions from package Matrix
 diag <- Matrix::diag 
@@ -44,7 +45,7 @@ ind <- which(Matrix::colSums(NetMatrix)-Matrix::diag(NetMatrix)>0)
 NET <- NetMatrix[ind,ind]
 
 # Select number of vertices to plot
-n <- 20    # n. of vertices
+n <- 64    # n. of vertices
 NetDegree <- sort(diag(NET),decreasing=TRUE)[n]
 NET <- NET[diag(NET)>=NetDegree,diag(NET)>=NetDegree]
 
@@ -60,6 +61,8 @@ V(bsk.network)$size <- deg*1.1
 
 # Remove loops
 bsk.network <- simplify(bsk.network, remove.multiple = F, remove.loops = T) 
+
+#Feed bsk.network to ggraph_test from here if desired. -----
 
 # Choose Network layout
 #l <- layout.fruchterman.reingold(bsk.network)
