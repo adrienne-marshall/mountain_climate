@@ -17,7 +17,7 @@ n <- nrow(dat2)/(10*length(unique(dat$reviewer)))
 #Make assignments.
 assignments <- list()
 for(i in 1:length(names)){
-  assignments[[i]] <- dat %>% filter(reviewer == names[i])
+  assignments[[i]] <- dat2 %>% filter(reviewer == names[i])
   assignments[[i]] <- assignments[[i]][1:ceiling(n),]
   names_temp <- names[names != names[i]]
 
