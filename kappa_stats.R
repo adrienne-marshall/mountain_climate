@@ -3,7 +3,7 @@
 rm(list=ls())
 library(tidyverse); library(psych)
 
-wos <- read.csv("data/wos_recs.csv")
+wos <- read.csv("data/backups/wos_recs.csv")
 
 wos <- wos %>% 
   dplyr::select(X, title, Round.1..Include., Round.2..Include., Round.3..Include., 
@@ -34,6 +34,37 @@ results$kappa <- round(results$kappa, 3)
 
 write_csv(results, "data/kappa_results.csv")
 
+##Get kappa stats on wos_cab_pro.--------
+#These are only for cabdirect and proquest. 
+dat <- read_csv("data/wos_cab_pro_0606.csv")
+names(dat)[names(dat) == "Include?"] <- "include1"
+names(dat)[names(dat) == "Include?_1"] <- "include2"
+names(dat)[names(dat) == "New reviewer: No international"] <- "reviewer2"
+cab_pro <- dat %>% filter(source != "web_of_science") %>%
+  select(id, title, reviewer2, include1, include2) %>%
+  filter(!is.na(include2))
 
+
+#Change "International" and "Paleo" to "No".
+cab_pro[cab_pro %in% c("International", "Paleo")] <- "No"
+
+#Calculate kappa. 
+kap_dat <- cab_pro %>% select(include1, include2)
+kap_dat <- data.frame(kap_dat)
+ans <- cohen.kappa(kap_dat)
+
+ans$kappa
+#So we got 0.446 kappa... not great!
+
+#Get kappa stats on crossref. -------------
+dat <- read_csv("data/crossref_0606.csv")
+names(dat)[names(dat) == "Include?"] <- "include1"
+names(dat)[names(dat) == "Include?_1"] <- "include2"
+
+cross <- dat %>% select(title, reviewer, include1, include2)
+ans <- cross %>% select(include1, include2) %>% data.frame() %>% cohen.kappa()
+
+ans$kappa
+#Kappa is 0.39 for this one.
 
 

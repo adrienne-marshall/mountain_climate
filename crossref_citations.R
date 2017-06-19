@@ -125,4 +125,7 @@ data_new <- data_new %>% mutate(reviewer = names)
 write_csv(data_new, "data/crossref_papers.csv")
 
 
+##temporary: delete.
+d1 <- read_csv("data/wos_cab_pro.csv")
+d2 <- read_csv("data/backups/proquest2.csv")
 

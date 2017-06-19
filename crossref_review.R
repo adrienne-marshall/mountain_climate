@@ -4,6 +4,7 @@ library(tidyverse)
 dat <- read_csv("data/crossref_0531.csv")
 names(dat)[1] <- "title"
 names(dat)[names(dat) == "Include?"] <- "Include"
+dat1 <- dat
 
 #Only review papers that weren't international. 
 dat <- dat %>% filter(!Include %in% c("International", "Paleo"))
@@ -27,7 +28,7 @@ new <- as.data.frame(bind_rows(assignments))
 
 new <- new %>% select(title, new_reviewer)
 
-new <- full_join(dat, new, by = "title") %>% 
+new <- full_join(dat1, new, by = "title") %>% 
   arrange(title)
 
 new %>% group_by(new_reviewer) %>% 
