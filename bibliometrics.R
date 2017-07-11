@@ -6,7 +6,6 @@
 library(bibliometrix)
 D <- readLines("data/test.bib")
 
-
 #Convert to a data frame.
 M <- convert2df(D, dbsource = "isi", format = "bibtex")
 
