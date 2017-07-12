@@ -164,7 +164,7 @@ plot(bsk.network,layout = l, vertex.label.dist = 0.5,
 
 #####--------------------------------------------------------------------------
 #Co-word analysis: conceptual structure of a field - 
-#this example uses MCA (Multiple Correspondence Analysis) and k-means clusterin.
+#this example uses MCA (Multiple Correspondence Analysis) and k-means clustering.
 # Create a bipartite network of Keyword plus
 #
 # each row represents a manuscript

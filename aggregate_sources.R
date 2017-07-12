@@ -2,7 +2,7 @@
 library(tidyverse)
 
 d1 <- read_csv("data/wos_cab_pro_0606.csv")
-d2 <- read_csv("data/crossref_0606.csv")
+d2 <- read_csv("data/crossref_0711.csv")
 
 names(d1) <- gsub(" ", "_", names(d1))
 names(d1) <- gsub(":", ".", names(d1))
@@ -72,7 +72,7 @@ names(dat)[names(dat) == "include_final"] <- "include"
 
 write_csv(dat, "data/aggregated_papers.csv")
 
-#Get crossref results for these data so the format is consistent. 
+#Get crossref results for these data so the format is consistent. ---------
 require(rcrossref)
 
 #First, everything with a DOI: 
@@ -81,8 +81,36 @@ doi_list <- dat$doi[!is.na(dat$doi)]
 crossref_results <- vector("list", length(doi_list))
 for(i in 1:length(crossref_results)){
   try({
-  crossref_results[[i]] <- cr_works(dat, dois = doi_list[i])
+  crossref_results[[i]] <- cr_works(dois = doi_list[i])
+  })
+  print(i)
+}
+
+crossref_results2 <- lapply(crossref_results, function(x){x[[2]]})
+crossref_df <- bind_rows(crossref_results2)
+
+#6 errors: 
+dois_needed <- c("10.1043/0044-7447(2001)030(0410:MGAMSO)2.0.CO;2",
+                 "10.1175/1520-0442(2003)016(1912:HOTWUS)2.0.CO;2",
+                 "10.1175/1520-0442(2003)016(0799:SPDOTN)2.0.CO;2",
+                 "10.1175/1520-0442(2002)015&lt;1926:IOIACO&gt;2.0.CO;2",
+                 "10.1175/1520-0442(2003)016&lt;1912:HOTWUS&gt;2.0.CO;2",
+                 "10.1002/(SICI)1099-1085(199609)10:9&lt;1173::AID-HYP368&gt;3.0.CO;2-V")
+
+titles_needed <- dat$title[is.na(dat$doi)]
+
+#Get the titles that weren't associated with DOIs.
+title_search_results <- vector("list", length(titles_needed))
+for(i in 1:length(title_search_results)){
+  try({
+    title_search_results[[i]] <- cr_works(flq = (query.title = titles_needed[i]))
+    print(i)
   })
 }
   
- 
+messages <- lapply(title_search_results, function(x){x$message})
+messages <- unlist(messages)
+
+#Searching for the titles that didn't have DOIs didn't work...
+
+#Make a data frame that looks like M (from bibliometrics.R):
