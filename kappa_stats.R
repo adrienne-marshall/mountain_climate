@@ -95,9 +95,38 @@ ans <- dat_all %>% select(include1, include2) %>%
 ans$kappa
 #Unweighted kappa is now 72.8% (+/- 8%)
 
-keep <- dat_all %>% filter(include1 %in% c("Yes", "Maybe", NA))
-keep %>% 
-  group_by(source) %>% 
+#inclusion rules:
+#if include2 == NA, then use include1.
+#if include2 isn't NA and include2 or include1 == maybe, then go with the other one. 
+#if either one is yes, then keep it.
+keep <- dat_all %>% 
+  filter(include1 %in% c("Yes", "Maybe", NA)) %>%
+  mutate(include_final = NA) %>%
+  mutate(include_final = case_when(is.na(include2) ~ include1,
+                                  # include1 == "Maybe" & !is.na(include2) ~ include2,
+                                  # include2 == "Maybe" & !is.na(include1) ~ include1,
+                                   include1 == "Yes" | include2 == "Yes" ~ "Yes",
+                                   is.na(include1) & is.na(include2) ~ "NA"
+                                   ))
+#keep %>% filter(is.na(include_final)) %>% View()
+indices1 <- which(is.na(keep$include_final) & !is.na(keep$include1))
+for(i in 1:length(indices1)){
+  x <- indices1[i]
+  if(keep$include1[x] == "No" | keep$include2[x] == "No"){
+    keep$include_final[x] <- "No"
+    }
+  if(keep$include1[x] == "Maybe" & keep$include2[x] == "Maybe"){
+    keep$include_final[x] <- "Maybe"}
+}
+   
+keep <- keep %>%
+  filter(include_final %in% c("Yes", "Maybe", NA))
+                              
+keep %>%
+  group_by(include_final) %>% 
   count()
-#with this done, don't really need aggregate_sources. add a litte more info: 
+#with this done, don't really need aggregate_sources. rejoin with original datasets (in another script?)
+write_csv(keep, "data/titles_to_keep.csv")
+
+
 
