@@ -1,0 +1,275 @@
+---
+title: "Mountain Climate Network Analysis"
+author: "mountain climate research group"
+date: "7/12/2017"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+#Data preparation
+Load packages
+```{r setup, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(tidytext)
+library(igraph)
+library(ggraph)
+library(stringr)
+library(widyr)
+library(knitr)
+library(topicmodels)
+```
+
+Get data.
+```{r read data, cache = TRUE, message = FALSE}
+dat <- read_csv("data/aggregated_data.csv") %>%
+  filter(!is.na(title))
+```
+
+Make a data frame that lists all the authors in separate columns for each paper.
+```{r list authors, ache = TRUE}
+author_df <- dat %>% select(id, authors) %>% 
+  unnest_tokens(output = authors_long, input = authors, token = stringr::str_split, pattern = ";")
+```
+
+Convert each author name to "last, first initial" format.
+```{r author formatting, cache = TRUE}
+author_df <- author_df %>% 
+  mutate(authors_long = str_trim(authors_long)) %>%
+  mutate(last = ifelse(grepl(",", authors_long) == TRUE,
+    str_extract(authors_long, "[^,]*"),
+    str_extract(authors_long, "[^ ]*$"))) %>%
+  mutate(first_init = ifelse(grepl(",", authors_long) == TRUE,
+                             strsplit(authors_long, " "),
+                             str_sub(authors_long, start = 1, end = 1))) %>%
+  unnest(first_init) %>%
+  group_by(authors_long, id) %>%
+  slice(2) %>%
+  ungroup() %>%
+  arrange(id) %>%
+  mutate(first_init = str_sub(first_init, 1, 1)) %>%
+  mutate(author = paste0(first_init, ". ", last)) %>%
+  select(-last, -first_init)
+
+kable(head(author_df))
+
+```
+
+
+Now column "author" contains the most standard version.
+It looks like we have `r length(unique(author_df$author))` unique authors. 
+
+Get pairwise author count:
+```{r pairwise authors, cache = TRUE}
+author_pairs <- author_df %>%
+  pairwise_count(author, id, sort = TRUE, upper = FALSE)
+names(author_pairs)[1:2] <- c("author1", "author2")
+kable(head(author_pairs))
+```
+
+
+# Network analysis:
+
+## Simple network of authors.
+Plot network of author collaborations in cases where there are 3 or more collaborations.
+
+```{r collab_network, fig.width = 10, cache = TRUE}
+set.seed(1234)
+author_pairs%>%
+  filter(n > 2) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "kk") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 2) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines"),
+                 size = 2) +
+  theme_void()
+```
+
+Looks like this tells us that most of the researchers in this network are operating as isolated small groups, rather than having strong inter-group collaboration - although, collaborations with less than 3 counts were left out in the interest of computational efficiency, so that may be hiding some interesting collaboration structure. Go ahead and make the full network (don't include text; there will be 1897 authors - which also means that there are 69 authors who have only sole-authored items). This takes ~5 minutes.
+
+```{r full author network, cache = TRUE, fig.width = 10}
+set.seed(1234)
+author_pairs%>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "kk") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = FALSE, 
+                 point.padding = unit(0.2, "lines"),
+                 size = 2) +
+  theme_void()
+
+```
+
+Wow, that makes it look like there are a bunch of really central authors that connect to more peripheral ones. How do other network layouts affect this?
+
+```{r full author network2, cache = TRUE, fig.width = 10}
+set.seed(1234)
+author_pairs%>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = FALSE, 
+                 point.padding = unit(0.2, "lines"),
+                 size = 2) +
+  theme_void()
+
+```
+
+Weird, that second one just looks like garbage. It would be good to play around more with other layouts, even though this is a little slow to run. I haven't yet found any formal definition of how the different layouts in ggraph work. Another next step here could be to calculate some kind of appropriate metrics. 
+
+
+## Network analysis by topic
+Join authors with subject data (using journal, discipline, keyword?). A possible approach here is to do some topic modeling with the keywords (276 papers are missing keyword data), categorize papers by topic, and then do network analysis grouped by topic. This is probably a good idea anyway because we want to split papers by topic for when we code for content.
+
+```{r keyword tidy, cache = TRUE}
+keyword_df <- dat %>%
+  dplyr::select(id, keywords) %>%
+  mutate(keywords = gsub(",", ";", keywords)) %>%
+  unnest_tokens(input = keywords, output = keywords, token = stringr::str_split, pattern = ";") %>%
+  mutate(keywords = str_trim(keywords)) %>%
+  filter(!is.na(keywords))
+```
+
+We've got `r length(unique(keyword_df$keywords))` unique keywords. Let's look at keyword pairs to see how they're grouped. 
+
+```{r keyword pairs, cache = TRUE}
+keyword_pairs <- keyword_df %>%
+  pairwise_count(keywords, id, sort = TRUE, upper = FALSE)
+```
+
+```{r keyword network, cache = TRUE, fig.width = 10}
+set.seed(1234)
+keyword_pairs %>%
+  filter(n >= 10) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "salmon") +
+  geom_node_point(size = 2) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+
+```
+
+Wow, that keyword network seems to be very centralized. And I worry a little bit that the structure we see here is just an artifact of how people happen to decide on topics. 
+
+```{r get correlations between keywords, cache = TRUE}
+keyword_cors <- keyword_df %>% 
+  group_by(keywords) %>%
+  #filter(n() >= 50) %>%
+  pairwise_cor(keywords, id, sort = TRUE, upper = FALSE)
+
+#Take out keyword correlations with correlation 1; these are redundant.
+keyword_cors <- keyword_cors %>%
+  filter(round(correlation, 3) < 1)
+
+kable(head(keyword_cors))
+
+```
+
+Visualize the network of keyword correlations: 
+```{r visualize keyword correlations, cache = TRUE, fig.width = 10}
+set.seed(1234)
+keyword_cors %>%
+  filter(correlation > .7) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "kk") +
+  geom_edge_link(aes(edge_alpha = correlation, edge_width = correlation), edge_colour = "darkorchid") +
+  geom_node_point(size = 2) +
+  geom_node_text(aes(label = name), repel = FALSE,
+                 #point.padding = unit(0.2, "lines"),
+                 size = 2) +
+  theme_void()
+```
+
+Well, that's extremely difficult to read, but it does look like there's some more meaningful grouping with correlations than there was with just pairwise analysis. 
+
+Let's move on to some topic modeling to see if we can group papers. First, define stop words in addition to the common ones, and get word counts.
+```{r stop words and word counts}
+my_stop_words <- data_frame(word = c("climate change", "usa"),
+                                      lexicon = rep("custom", 2))
+
+word_counts <- keyword_df %>%
+  rename(word = keywords) %>%
+  anti_join(my_stop_words) %>%
+  count(id, word, sort = TRUE) %>%
+  ungroup() %>%
+  arrange(-n)
+
+word_counts
+```
+
+This topic modeling approach may not make a lot of sense since keywords generally only appear once... but continue anyway. 
+
+```{r topic modeling, cache = TRUE, fig.width = 10}
+keyword_dtm <- word_counts %>%
+  cast_dtm(id, word, n)
+
+keyword_lda <- LDA(keyword_dtm, k = 8, control = list(seed = 1234))
+tidy_lda <- tidy(keyword_lda)
+
+top_terms <- tidy_lda %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  group_by(topic, term) %>%    
+  arrange(desc(beta)) %>%  
+  ungroup() %>%
+  mutate(term = factor(paste(term, topic, sep = "__"), 
+                       levels = rev(paste(term, topic, sep = "__")))) %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
+  labs(title = "Top 10 terms in each LDA topic",
+       x = NULL, y = expression(beta)) +
+  facet_wrap(~ topic, ncol = 4, scales = "free")
+```
+
+These look like they're somewhat informative, but imperfect. They would probably be more informative if we did this same procedure with full texts or abstracts (which might be a good next step, using crminer).
+
+For now, can we categorize each paper by its topic?
+```{r categorize papers, cache = TRUE}
+lda_gamma <- tidy(keyword_lda, matrix = "gamma")
+id_topic <- lda_gamma %>% 
+  group_by(document) %>%
+  filter(gamma == max(gamma)) %>%
+  ungroup() %>%
+  select(document, topic) %>%
+  rename(id = document) %>%
+  mutate(id = as.integer(id))
+
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+network_df <- left_join(author_df, id_topic, by = "id") 
+author_topics <- network_df %>% 
+  group_by(author) %>%
+  summarise(topic_new = Mode(topic))
+
+
+author_pairs <- author_df %>%
+  pairwise_count(author, id, sort = TRUE, upper = FALSE)
+names(author_pairs)[1:2] <- c("author1", "author2")
+kable(head(author_pairs))
+```
+
+
+
+
+
+
+
+
+

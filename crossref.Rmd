@@ -1,0 +1,127 @@
+---
+title: "Crossref citations for mountain climate"
+author: "Adrienne Marshall"
+date: "3/28/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+sessionInfo()
+```
+
+This document includes code and descriptions of how to download citations from crossref. First, load the necessary packages. (If you don't already have any of these packages, you'll need to install them with by typing into the console: install.packages("package name"). )
+
+```{r load packages}
+require("rcrossref"); library(tidyverse); library(stringr)
+library(countrycode)
+library(knitr)
+```
+
+### Get data
+Get data from crossref with the following code snippet: 
+
+```{r get data, echo=TRUE, cache = TRUE}
+
+papers <- cr_works(query=  "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' 
++'mountainous' +'headwater'  +'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake river' +'salmon river' +'clearwater' +'spokane river' +'kootenai river' +'Pacific Northwest' +'Western United States' +'Columbia River Basin'",
+                   filter = c(type = "journal-article"),
+                   limit=1000)
+
+papers1 <- cr_works(query = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' 
++'mountainous' +'headwater'+'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake river' +'salmon river' +'clearwater' +'spokane' +'kootenai' +'Pacific Northwest' + 'willamette river'+ 'clark fork river'+ 'john day river'+ 'sandy river'+ 'lewis river'+ 'methow river'+ 'white salmon river'+'Western United States' +'Columbia River Basin'",  
+                    filter = c(type = "journal-article"),
+                   limit=1000)
+
+papers2 <- cr_works(query = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine'+'mountainous'+'snow dominant'+'headwater'+'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake river' +'salmon river' +'clearwater' +'spokane river' +'kootenai' +'Pacific Northwest' + 'willamette'+ 'clark fork'+ 'john day river'+ 'sandy river'+ 'lewis river'+ 'methow river'+ 'white salmon river'+'Western United States' +'Columbia River Basin'",      
+                    filter = c(type = "journal-article"),
+                    limit=1000)
+
+papers3 <- cr_works(query = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' +'mountainous'+'snowdominant'+'headwater'+'washington' +'oregon' +'idaho' +'wyoming' +'montana' +'british columbia' +'kootenay' +'snake river' +'salmon river' +'clearwater' +'spokane river' +'kootenai' +'Pacific Northwest' +'willamette river' +'clark fork'+ 'john day river'+ 'sandy river'+ 'lewis river'+ 'methow river'+ 'white salmon river'+'Western United States' +'Columbia River Basin'+ 'cascade river'+'blue mountains'+'selkirk'+'purcell'+'wallowa'+'teton'+'rocky mountains'+'bitterroot'+ 'rockies'",
+                    filter = c(type = "journal-article"),
+                    limit=1000)
+
+papers4 <- cr_works(query = "+'climate change' +'mountain' +'columbia river' +'alpine' +'subalpine' 
++'mountainous' +'headwater' +'indigenous' + 'knowledge' + 'local' + 'community' + 'Pacific Northwest' +'Western United States' +'Columbia River Basin'",
+                    filter = c(type = "journal-article"),
+                    limit=1000)
+
+dat <- list(papers1, papers2, papers3, papers4)
+
+dat <- bind_rows(papers1[[2]], papers2[[2]], papers3[[2]], papers4[[2]])
+
+```
+
+Now, the data frame called "papers" has all the data from crossref for 4000 papers, some of which were duplicates, along with information about how many articles are selected by that search. Get rid of the duplicates and keep only relevant fields. 
+
+
+
+```{r set data frame}
+data <- dat %>% dplyr::select(alternative.id, container.title, created,
+                                   DOI, funder, link, publisher, reference.count,
+                                   score, source, subject, title, subtitle, type, URL, author,
+                                   issue, volume)
+data <- unique(data)
+nrow(data)
+```
+It's weird that that didn't get rid of any papers... try organizing by title and looking for duplicates manually. 
+
+```{r look for duplicates}
+data <- data %>% arrange(title)
+
+kable(data[1:20,])
+```
+
+
+##Filter data
+Now our papers are in a data frame called "data". Can we narrow them down? First, let's exclude everything that has in it's title place names that we know are irrelevant: this includes US states that aren't relevant, countries aside from the US and Canada, and names of rivers that are in other parts of the world (if you don't also have the "river_names.R" script in the same directory as this one, you'll find an errror here.
+
+```{r exclusions, cache = TRUE, echo = TRUE}
+#Define exclusions by location.
+countries <- countrycode_data$country.name.en
+countries <- countries[countries != "United States of America"]
+countries <- countries[countries != "Canada"]
+#Add a few countries that are weirdly named in the default list. 
+countries <- c(countries, "Iran", "Vietnam", "UK", "Bolivia", "Micronesia", "United Kingdom")
+
+states <- state.name
+states_in <- c("Idaho", "Washington", "Oregon", "Nevada", "Utah", "Wyoming", "Montana")
+ans <- states %in% states_in
+states_ex <- states[!ans] 
+source("river_names.R")
+
+continents <- c("Asia", "Africa", "Europe", "South America", "Australia", "Antarctica",
+                "African", "Asian", "European", "South American", "Australian")
+
+exclusions <- c(countries, states_ex, river_names, continents)
+
+test <- data
+for(i in 1:length(exclusions)){
+  test <- test %>% filter(!str_detect(title, exclusions[i]))
+}
+```
+It might also be good to add a list of mountain ranges to exclude.
+
+How many papers do we have now? 
+```{r count papers, echo = TRUE}
+nrow(test)
+```
+
+Exclude papers with very few references - these seem to primarily be articles and blog posts about original research.
+```{r exclude blogs, echo = TRUE}
+n <- 5
+test <- test %>% filter(reference.count > n)
+#Show new number of papers.
+nrow(test)
+```
+
+
+We got from 1000 papers originally to the number shown above with those exlusions. Remember though, there are actually hundreds of thousands papers in our search - we just haven't yet downloaded the metadata for all of them. Even if we get rid of 90% of them with these exclusion terms, that's still way too many. Can we try to find out if the scores assigned by crossref are useful? Perhaps we can select a cutoff score beyond which we don't think papers are relevant. Let's look at a couple hundred paper titles and scores to see if the scores are performing well. 
+
+```{r look at papers, echo = TRUE}
+table_dat <- test %>% dplyr::select(title, container.title, URL, reference.count, score)
+kable(table_dat)
+```
+
+
+
