@@ -257,13 +257,105 @@ network_df <- left_join(author_df, id_topic, by = "id")
 author_topics <- network_df %>% 
   group_by(author) %>%
   summarise(topic_new = Mode(topic))
+kable(head(author_topics))
 
-
-author_pairs <- author_df %>%
-  pairwise_count(author, id, sort = TRUE, upper = FALSE)
-names(author_pairs)[1:2] <- c("author1", "author2")
-kable(head(author_pairs))
+#author_pairs <- author_df %>%
+#  pairwise_count(author, id, sort = TRUE, upper = FALSE)
+#names(author_pairs)[1:2] <- c("author1", "author2")
+#kable(head(author_pairs))
 ```
+
+## Topic modelling with abstracts:
+
+```{r abstract topic model, cache = TRUE}
+abstract_df <- dat %>% select(id, abstract) %>%
+  filter(!is.na(abstract)) %>%
+  unnest_tokens(word, abstract) %>%
+  anti_join(stop_words)
+
+abstract_df %>% count(word, sort = TRUE)
+
+#Looks like there are some numbers... maybe get rid of those.
+#Also, change everything to lower case. 
+abstract_df <- abstract_df %>%
+  filter(!grepl("[[:digit:]]", word)) %>%
+  mutate(word = tolower(word))
+
+#Need to add a few more stop words: 
+abstract_df <- abstract_df %>%
+  filter(!word %in% c("org", "http", "xhtml", "xmlns"))
+  
+library(widyr)
+abstract_word_pairs <- abstract_df %>%
+  pairwise_count(word, id, sort = TRUE, upper = FALSE)
+
+#this is slow - only run if needed. 
+# abstract_cors <- abstract_df %>% 
+#   group_by(word) %>%
+#   #filter(n() >= 50) %>%
+#   pairwise_cor(word, id, sort = TRUE, upper = FALSE)
+
+#Calculate tf_idf.
+abstract_tf_idf <- abstract_df %>% 
+  count(id, word, sort = TRUE) %>%
+  ungroup() %>%
+  bind_tf_idf(word, id, n)
+
+```
+
+```{r abstract topic model 2, cache = TRUE}
+word_counts <- abstract_df %>%
+  count(id, word, sort = TRUE) %>%
+  ungroup()
+
+word_counts
+
+abstract_dtm <- word_counts %>%
+  cast_dtm(id, word, n)
+
+#This may take a while. 
+abstract_lda <- LDA(abstract_dtm, k = 8, control = list(seed = 1234))
+tidy_lda <- tidy(abstract_lda)
+
+top_terms <- tidy_lda %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms
+
+top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  group_by(topic, term) %>%    
+  arrange(desc(beta)) %>%  
+  ungroup() %>%
+  mutate(term = factor(paste(term, topic, sep = "__"), 
+                       levels = rev(paste(term, topic, sep = "__")))) %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
+  labs(title = "Top 10 terms in each LDA topic",
+       x = NULL, y = expression(beta)) +
+  facet_wrap(~ topic, ncol = 4, scales = "free")
+
+```
+
+```{r gamma, cache = TRUE}
+lda_gamma <- tidy(abstract_lda, matrix = "gamma")
+
+ggplot(lda_gamma, aes(gamma, fill = as.factor(topic))) +
+  geom_histogram(show.legend = FALSE, bins = 40) +
+  facet_wrap(~ topic, ncol = 4) +
+  scale_y_log10() +
+  labs(title = "Distribution of probability for each topic",
+       y = "Number of documents", x = expression(gamma))
+
+```
+
+
+
 
 
 
