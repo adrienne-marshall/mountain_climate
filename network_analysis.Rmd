@@ -53,6 +53,7 @@ author_df <- author_df %>%
   select(-last, -first_init)
 
 kable(head(author_df))
+write_csv(author_df, "data/authors.csv")
 
 ```
 
@@ -135,17 +136,30 @@ Wow, that makes it look like there are a bunch of really central authors that co
 set.seed(1234)
 author_pairs%>%
   graph_from_data_frame() %>%
-  ggraph(layout = "fr") +
+  ggraph(layout = "drl") +
   geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
-  geom_node_point(size = 1) +
-  geom_node_text(aes(label = name), repel = FALSE, 
-                 point.padding = unit(0.2, "lines"),
-                 size = 2) +
+  geom_node_point(size = 0.1) +
+  #geom_node_text(aes(label = name), repel = FALSE, 
+  #               point.padding = unit(0.2, "lines"),
+  #               size = 2) +
   theme_void()
 
 ```
 
-Weird, that second one just looks like garbage. It would be good to play around more with other layouts, even though this is a little slow to run. I haven't yet found any formal definition of how the different layouts in ggraph work. Another next step here could be to calculate some kind of appropriate metrics. 
+Weird, that second one just looks like garbage. It would be good to play around more with other layouts, even though this is a little slow to run. I haven't yet found any formal definition of how the different layouts in ggraph work. 
+
+How about a hive plot? (This doesn't work yet).
+```{r hive plot, cache = TRUE, eval = FALSE}
+graph <- graph_from_data_frame(author_pairs)
+V(graph)$friends <- degree(graph, mode = 'in')
+V(graph)$friends <- ifelse(V(graph)$friends < 3, 'few', 
+                           ifelse(V(graph)$friends >= 10, 'many', 'medium'))
+ggraph(graph, 'hive', axis = 'friends', sort.by = 'degree') + 
+    geom_edge_hive(aes(colour = factor(year), alpha = ..index..)) + 
+    geom_axis_hive(aes(colour = friends), size = 3, label = FALSE) + 
+    coord_fixed()
+```
+
 
 Now, try a graph that facets the networks by year. First, do this wtih only author pairs with greater than 1 collaboration - this may not be the most interesting piece of information, but it's a little easier to read than a version with all the authors included.
 ```{r author_network_year sparse, cache = TRUE, fig.width = 10, echo = FALSE}
