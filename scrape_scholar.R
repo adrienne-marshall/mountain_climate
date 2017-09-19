@@ -45,7 +45,7 @@ search_cite2 <- function(Author, ...){
 
 #For each author, try to get their google scholar page.
 authors <- authors %>% mutate(text = NA)
-for(i in 632:nrow(authors)){
+for(i in 1433:nrow(authors)){
   #try({
     data <- search_cite2(authors$full[i])
     authors$text[i] <- data
@@ -53,17 +53,13 @@ for(i in 632:nrow(authors)){
     print(i)
 } #I think this got rate-limited... try again later?
 
-write_csv(authors, "data/author_data632_1432.csv")
+write_csv(authors, "data/author_data1433_1966.csv")
 
 ##Now read saved data and extract info: --------
 files <- list.files(path = "data", pattern = "author_data", full.names = TRUE)
 file_dat <- lapply(files, read_csv)
 dat <- bind_rows(file_dat)
 
-#Save a list of authors who didn't get caught my this search:
-authors_remaining <- dat %>%
-  filter(is.na(text)) %>%
-  distinct(full)
 
 #Get authors where we do have text:
 dat <- dat %>%
@@ -104,20 +100,46 @@ for(i in 1:nrow(dat)){
   } # end of if statement
 } #end of loop through authors
 
-
-
-#writing myself from here - 
-if (length(x) > 1){ ### if they have someone for a hit
-  name <- str_extract_all(x, "span class='gs_hlt'>.*</span>")
-  name <- unlist(name)
-  name <- gsub("span class='gs_hlt'>", "", name)
-  name <- gsub("</span>", "", name)
+## Alternative: read page with rvest. -------------------
+authors <- authors %>% mutate(html = NA, 
+                              name_from_web = NA,
+                              affiliation = NA,
+                              discipline = NA)
+# currently this is only getting the first author on a page, and first discipline. 
+for(i in 1:10){#nrow(authors)){
+  try({
+  auth.names <- strsplit(authors$full[i], " ")[[1]]
+  auth.names <- paste(auth.names[1:length(auth.names)], sep="", collapse="+")
+  search.page <- paste("http://scholar.google.com/citations?hl=en&view_op=search_authors&mauthors=", auth.names, sep="")
+  page <- read_html(search.page)
   
+  name <- page %>%
+    html_nodes(".gs_hlt") %>% #.gs_lusr_name #.gs_hlt
+    html_text()
+  if(length(name) > 0){authors$name_from_web[i] <- name}
+  
+  aff <- page %>%
+    html_nodes(".gsc_lusr_aff") %>%
+    html_text() 
+  if(length(aff) > 0){authors$affiliation[i] <- aff}
+  
+  disc <- page %>%
+    html_nodes(".gsc_co_int") %>%
+    html_text()
+  if(length(disc) > 0){authors$discipline[i] <- disc}
+  
+  authors$html[i] <- page
+  }) #end of try statement.
+  print(i)
+}
 
-    
-out2 <- searchCite("John Abatzoglou") #this doesn't work, but can borrow from this function.
 
+## name: .gs_hlt
+## affiliation: .gs_lusr_aff
+## discipline: .gsc_co_int
 
+### dump code: --------------------------
+  
 affiliation <- page %>%
   html_nodes(".gsc_prf_il") %>%
   html_text()
@@ -125,7 +147,7 @@ affiliation <- page %>%
 
   
 
-page <- read_html("https://scholar.google.com/citations?user=S1J4kAoAAAAJ&hl=en")
+
 
 
 
