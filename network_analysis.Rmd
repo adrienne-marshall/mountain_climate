@@ -23,7 +23,7 @@ library(topicmodels)
 
 Get data.
 ```{r read data, cache = TRUE, message = FALSE}
-dat <- read_csv("data/aggregated_data.csv") %>%
+dat <- read_csv("data/final_corpus.csv") %>%
   filter(!is.na(title))
 ```
 
@@ -69,6 +69,15 @@ names(author_pairs)[1:2] <- c("author1", "author2")
 kable(head(author_pairs))
 
 ```
+
+```{r authors_matrix, cache = TRUE, eval = FALSE, echo = FALSE}
+#Make a matrix of authors for use in gephi. 
+author_mat <- spread(author_pairs, key = author2, value = n)
+author_mat[is.na(author_mat)] <- 0
+names(author_mat)[1] <- ""
+write_csv(author_mat, "data/author_matrix.csv")
+```
+
 
 Make a yearly version of author pairs as well: 
 ```{r pairwise authors year, cache = TRUE}
@@ -146,18 +155,20 @@ author_pairs%>%
 
 ```
 
-Weird, that second one just looks like garbage. It would be good to play around more with other layouts, even though this is a little slow to run. I haven't yet found any formal definition of how the different layouts in ggraph work. 
 
-How about a hive plot? (This doesn't work yet).
-```{r hive plot, cache = TRUE, eval = FALSE}
-graph <- graph_from_data_frame(author_pairs)
-V(graph)$friends <- degree(graph, mode = 'in')
+How about a hive plot? This would solve the problem that different layouts suggest different information about the network. There are probably a number of ways we could structure a hive plot - but one would be to have three axes, representing physical sciences, social sciences, and life sciences - and then each axis would be doubled, so we could see collaborations within the axis, and collaborations across disciplines. 
+```{r hive plot, cache = TRUE, eval = TRUE, fig.width = 9}
+graph <- graph_from_data_frame(author_pairs, directed = FALSE)
+V(graph)$friends <- degree(graph, mode = 'all')
 V(graph)$friends <- ifelse(V(graph)$friends < 3, 'few', 
                            ifelse(V(graph)$friends >= 10, 'many', 'medium'))
-ggraph(graph, 'hive', axis = 'friends', sort.by = 'degree') + 
-    geom_edge_hive(aes(colour = factor(year), alpha = ..index..)) + 
-    geom_axis_hive(aes(colour = friends), size = 3, label = FALSE) + 
-    coord_fixed()
+ggraph(graph, 'hive', axis = 'friends') + 
+    geom_edge_hive(aes(edge_alpha = n)) + 
+    geom_axis_hive(aes(colour = friends), 
+                   alpha = 1, size = 2, label = FALSE) + 
+    coord_fixed() +
+    labs(color = "Collaborators") +
+    theme_void()
 ```
 
 
@@ -176,7 +187,7 @@ author_pairs_years%>%
   facet_wrap(~year) + 
   theme_void()
 ```
-It does look like we might be moving towards more networks, and possibly more interconnectedness of networks over time? There are really dense clumps in 2008-2010, and a greater number of clumps with more interaction between them in more recent years? However, this interpretaiton depends strongly on what graphical layout we use; this would be a good thing to research more.  
+It does look like we might be moving towards more networks, and possibly more interconnectedness of networks over time? There are really dense clumps in 2008-2010, and a greater number of clumps with more interaction between them in more recent years? However, this interpretation depends strongly on what graphical layout we use; this would be a good thing to research more.  
 
 How about if we do this with all collaborations included?
 
@@ -198,7 +209,7 @@ author_pairs_years%>%
 #### Actor-level statistics
 Finally, let's calculate some descriptive statistics on actors in this network - this is just a start, and a place we'll need to come back to. First, eigenvector centrality:
 ```{r eigen_statistics, cache = TRUE}
-graph_obj <- graph_from_data_frame(author_pairs)
+graph_obj <- graph_from_data_frame(author_pairs, directed = FALSE)
 ec <- eigen_centrality(graph_obj)[[1]]
 ec_df <- data.frame(ec) 
 ec_df <- ec_df %>% mutate(name = rownames(ec_df)) %>%
@@ -334,10 +345,10 @@ keyword_cors %>%
   graph_from_data_frame() %>%
   ggraph(layout = "kk") +
   geom_edge_link(aes(edge_alpha = correlation, edge_width = correlation), edge_colour = "darkorchid") +
-  geom_node_point(size = 2) +
-  geom_node_text(aes(label = name), repel = FALSE,
+  geom_node_point(size = 1) +
+ # geom_node_text(aes(label = name), repel = FALSE,
                  #point.padding = unit(0.2, "lines"),
-                 size = 2) +
+  #               size = 2) +
   theme_void()
 ```
 
@@ -437,7 +448,7 @@ abstract_df <- abstract_df %>%
 
 #Need to add a few more stop words: 
 abstract_df <- abstract_df %>%
-  filter(!word %in% c("org", "http", "xhtml", "xmlns", "climate"))
+  filter(!word %in% c("org", "http", "xhtml", "xmlns"))
   
 library(widyr)
 abstract_word_pairs <- abstract_df %>%
@@ -609,7 +620,107 @@ ggplot(plot_dat, aes(x = year, y = n, group = word, color = word)) +
 
 If we're interested in doing more with this, two good next steps would be to normalize the data by total number of words in the corpus for each year (the corpus gets bigger over time, so words naturally become more frequent) and to think more about what words we're actually interested in. It might be that combinations of words are really the most interesting (bark beetle? forest carbon? stream temperature?).
 
+## Semantic Networks
+### with keywords
+Another thing we can do is look at which keywords or abstract words act as bridging concepts by treating the keywords or terms in abstracts as nodes in a network, where the edges are papers. Let's start with keywords for simplicity. Earlier, we already made a network graph of keywords. Another way of assessing this is by testing the centrality metrics for different keywords. 
 
 
+```{r keyword network metrics, cache = TRUE}
+graph_obj <- graph_from_data_frame(keyword_pairs, directed = FALSE)
+ec <- eigen_centrality(graph_obj)[[1]]
+ec_df <- data.frame(ec) 
+ec_df <- ec_df %>% mutate(name = rownames(ec_df)) %>%
+  arrange(desc(ec))
+names(ec_df[1]) <- "eigen_centrality"
 
+bet <- betweenness(graph_obj) %>%
+  data.frame() 
+bet <- bet %>% mutate(name = rownames(bet))
+names(bet)[1] <- "betweenness"
 
+deg <- degree(graph_obj) %>% 
+  data.frame()
+deg <- deg %>% mutate(name = rownames(deg))
+names(deg)[1] <- "degree_centrality"
+
+keyword_stats <- full_join(ec_df, bet, by = "name") %>%
+  full_join(deg, by = "name") %>%
+  select(name, everything()) %>%
+  arrange(desc(degree_centrality)) 
+
+#Add the frequency of each keyword for reference. 
+
+freq <- keyword_df %>%
+  group_by(keywords) %>%
+  count() %>%
+  rename("name" = "keywords")
+keyword_stats <- left_join(keyword_stats, freq, by = "name")
+
+kable(keyword_stats[1:20,])
+
+```
+
+The highest keywords in this list should be those that are the best connected to other keywords - that act as bridging concepts. However, they may also just be the most common ones. Another way to think about this is to see which keywords rank the lowest - which are not bridging concepts?
+
+```{r lowest ranked keywords, cache = TRUE}
+kable(tail(keyword_stats, 20))
+```
+
+Maybe there's a way to control for the frequency of keywords, if that's something we're concerned about. 
+
+### semantic networks with abstracts
+Do we find the same patterns with abstract words as with keywords?
+
+```{r abstract semantic analysis, cache = TRUE}
+graph_obj <- graph_from_data_frame(abstract_word_pairs, directed = FALSE)
+ec <- eigen_centrality(graph_obj)[[1]]
+ec_df <- data.frame(ec) 
+ec_df <- ec_df %>% mutate(name = rownames(ec_df)) %>%
+  arrange(desc(ec))
+names(ec_df[1]) <- "eigen_centrality"
+
+bet <- betweenness(graph_obj) %>%
+  data.frame() 
+bet <- bet %>% mutate(name = rownames(bet))
+names(bet)[1] <- "betweenness"
+
+deg <- degree(graph_obj) %>% 
+  data.frame()
+deg <- deg %>% mutate(name = rownames(deg))
+names(deg)[1] <- "degree_centrality"
+
+abstract_stats <- full_join(ec_df, bet, by = "name") %>%
+  full_join(deg, by = "name") %>%
+  select(name, everything()) %>%
+  arrange(desc(degree_centrality)) 
+
+#Add the frequency of each abstract word for reference. 
+
+freq <- abstract_df %>%
+  group_by(word) %>%
+  count() %>%
+  rename("name" = "word")
+abstract_stats <- left_join(abstract_stats, freq, by = "name")
+
+kable(abstract_stats[1:20,])
+```
+
+What are the least well-connected words in abstracts?
+```{r tail abstract stats, cache = TRUE}
+kable(tail(abstract_stats, 20))
+```
+
+Plot a network of abstract words: (this is words that show up together 70 or more times - totally arbitrary)
+```{r abstract network, cache = TRUE, fig.width = 10}
+set.seed(1234)
+abstract_word_pairs %>%
+  filter(n >= 70) %>% 
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "springgreen4") +
+  geom_node_point(size = 2) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+
+```
