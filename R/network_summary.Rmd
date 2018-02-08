@@ -1,0 +1,286 @@
+---
+title: "Network analyses"
+author: "Mountain Climate Research Group"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+# Overview and summary
+
+The goal of this document is to share the group's ideas about how network analysis could contribute to our project, a summary of what we've done so far, and identify/suggest some potential issues we could use help with. 
+
+## Research questions
+
+1. What are the spatial scales and distributions of climate change research in the high altitude (or headwater) regions of the Columbia River Basin?
+
+2. Where are the topical deficiencies and common foci in climate change research of the upper headwater regions of the Columbia River Basin?  (Add something related to impacts or adaptation or mitigation). 
+
+3. What are the structures of researcher networks within the corpus of studies we identify? To what extent are they disciplinary or interdisciplinary?
+
+Answering this suite of questions will result in an understanding of the spatial and topical distribution of research in this important area, as well as knowledge of which connections between disciplines are being made, and which are not as well represented in the literature. 
+
+## Role of network analysis
+
+Generally, we propose two types of network analyses: we'd like to analyze networks of (1) authors, and (2) ideas/concepts. The analysis of authors will provide information about structures of researcher networks and *ideally* interisciplinarity/connectivity within the networks. The networks of ideas and concepts should provide a way of understanding the role different topics play within this larger body of literature. For example, which topics are very central? Which act as connectors between ideas that are otherwise unconnected?
+
+# What we have so far
+
+## Author network analysis
+
+```{r setup, message = FALSE, warning = FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE)
+library(tidyverse)
+library(tidytext)
+library(igraph)
+library(ggraph)
+library(stringr)
+library(widyr)
+library(knitr)
+library(topicmodels)
+library(ggthemes)
+```
+
+```{r read data, cache = TRUE, message = FALSE}
+dat <- read_csv("data/final_corpus.csv") %>%
+  filter(!is.na(title))
+```
+
+
+```{r author formatting, cache = TRUE}
+author_df <- dat %>% select(id, authors) %>% 
+  unnest_tokens(output = authors_long, input = authors, token = stringr::str_split, pattern = ";") %>% 
+  mutate(authors_long = str_trim(authors_long)) %>%
+  mutate(last = ifelse(grepl(",", authors_long) == TRUE,
+    str_extract(authors_long, "[^,]*"),
+    str_extract(authors_long, "[^ ]*$"))) %>%
+  mutate(first_init = ifelse(grepl(",", authors_long) == TRUE,
+                             strsplit(authors_long, " "),
+                             str_sub(authors_long, start = 1, end = 1))) %>%
+  unnest(first_init) %>%
+  group_by(authors_long, id) %>%
+  slice(2) %>%
+  ungroup() %>%
+  arrange(id) %>%
+  mutate(first_init = str_sub(first_init, 1, 1)) %>%
+  mutate(author = paste0(first_init, ". ", last)) %>%
+  select(-last, -first_init)
+
+#kable(head(author_df))
+#write_csv(author_df, "data/authors.csv")
+```
+
+We have a list of authors associated with the papers in our corpus. For each pair of authors, we count the number of collaborations they have within our corpus. This can also be subset by year if we decide that analysis is appropriate. 
+```{r pairwise authors, cache = TRUE}
+author_pairs <- author_df %>%
+  pairwise_count(author, id, sort = TRUE, upper = FALSE)
+names(author_pairs)[1:2] <- c("author1", "author2")
+kable(head(author_pairs))
+```
+ 
+```{r pairwise authors year, cache = TRUE}
+author_df <- full_join(author_df, dat[, c("id", "year")], by = "id")
+author_df <- author_df %>% filter(!is.na(year))
+
+years <- unique(author_df$year)
+pair_dfs <- vector("list", length(years))
+for(i in 1:length(years)){
+  df <- author_df %>% filter(year == years[i])
+  pair_dfs[[i]] <- df %>% 
+    pairwise_count(author, id, sort = TRUE, upper = FALSE) %>%
+    mutate(year = years[i])
+}
+
+author_pairs_years <- bind_rows(pair_dfs)
+names(author_pairs_years)[1:2] <- c("author1", "author2")
+
+#Subset to years with > 50 author collaborations in our dataset.
+#(save a copy with the full dataset for later).
+apy_full <- author_pairs_years
+years <- author_pairs_years %>% group_by(year) %>% count() %>% filter(nn > 50)
+author_pairs_years <- author_pairs_years %>% filter(year %in% years$year)
+
+```
+
+First, we can just plot the author network (using a force-directed Kamada-Kawai layout algorithm.) 
+```{r collab_network, fig.width = 10, cache = TRUE}
+set.seed(1234)
+author_pairs %>%
+  #filter(n > 2) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "kk") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 2) +
+  #geom_node_text(aes(label = name), repel = TRUE, 
+  #               point.padding = unit(0.2, "lines"),
+  #               size = 2) +
+  theme_void()
+```
+
+
+It's nice to be able to make a plot like that, but the appearance is quite sensitive to layout algorithms. One alternative visualization is a hive plot - ideally, it would be nice to be able to build this by author discipline. For now, the axes are just categorized by number of collaborations of each author. 
+
+```{r hive plot, cache = TRUE, eval = TRUE, fig.width = 9}
+graph <- graph_from_data_frame(author_pairs, directed = FALSE)
+V(graph)$friends <- degree(graph, mode = 'all')
+V(graph)$friends <- ifelse(V(graph)$friends < 3, 'few', 
+                           ifelse(V(graph)$friends >= 10, 'many', 'medium'))
+ggraph(graph, 'hive', axis = 'friends') + 
+    geom_edge_hive(aes(edge_alpha = n)) + 
+    geom_axis_hive(aes(colour = friends), 
+                   alpha = 1, size = 2, label = TRUE) + 
+    coord_fixed() +
+    labs(color = "Collaborators") +
+    theme_void()
+```
+
+These visualizations are interesting, but it's difficult to know what information can really be extracted from them. One way to get more information is to calculate some network-level statistics. We can start by calculating the same metrics used in Newman (2001), as well as a few other metrics available in the igraph package. 
+
+```{r network_stats, cache = TRUE, echo = TRUE}
+nrow(dat)  # total papers
+nrow(author_df)  # total authors
+
+x <- author_df %>% group_by(author) %>% count()
+mean(x$n) # papers per author
+
+x <- author_df %>% group_by(id) %>% count()
+mean(x$n) # mean authors per paper
+
+x <- author_pairs %>% group_by(author1) %>% count()
+mean(x$nn) # collaborators per author
+
+g_obj <- graph_from_data_frame(author_pairs)
+
+edge_density(g_obj, loops = F) # proportion of present edges from all possible
+
+transitivity(g_obj) #transitivity - not really sure what this one means. 
+
+diameter(g_obj, directed = F, weights = NA) #longest distance between two nodes in the network. 
+
+mean_distance(g_obj, directed = F) # mean distance between nodes
+
+deg <- degree(g_obj, mode = "all")
+hist(deg, main = "Historam of node degrees")
+  
+centr <- centr_degree(g_obj)
+centr$centralization # network centralization
+centr$theoretical_max # theoretical maximum netrwork centralization (really?)
+
+# other potential metrics to assess, based on Newman: cutoff zc, exponent tau, size of giant component, first initial only, as a percentage, second largest component, mean distance, maximum distance, clustering coefficient c
+```
+
+
+## Keyword network analysis
+
+Another approach that may be more directly connected to our research methods is to analyze networks of keywords (or words extracted from the text). So far, we've been working with keywords - in part, because it's easier to deconvolve "mountain pine beetle" from "mountain", "pine", and "beetle" when working with keywords than text. 
+
+```{r keyword tidy, cache = TRUE}
+keyword_df <- dat %>%
+  dplyr::select(id, keywords) %>%
+  mutate(keywords = gsub(",", ";", keywords)) %>%
+  unnest_tokens(input = keywords, output = keywords, token = stringr::str_split, pattern = ";") %>%
+  mutate(keywords = str_trim(keywords)) %>%
+  filter(!is.na(keywords))
+```
+
+We've got `r length(unique(keyword_df$keywords))` unique keywords. Let's look at networks of keyword pairs:
+
+```{r keyword pairs, cache = TRUE}
+keyword_pairs <- keyword_df %>%
+  pairwise_count(keywords, id, sort = TRUE, upper = FALSE)
+```
+
+```{r keyword network, cache = TRUE, fig.width = 10}
+set.seed(1234)
+keyword_pairs %>%
+  filter(n >= 10) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "salmon") +
+  geom_node_point(size = 1) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines"),
+                 size = 3) +
+  theme_void()
+```
+
+This network has a lower limit on keyword pairs that appear together at least 10 times, just to make the visualization manageable. It does look like we see a centralized set of words, with other keywords that are more peripheral. I'm not sure why "circulation" and "atmosphere" and "forest trees" are so far from the rest of the network. 
+
+One approach to identify how well connected different keywords of interest are is to calculate connectivity scores for each word. Of course, the most frequent words will also have the highest connectivity, so we've considered estimating how well connected each word is relative to its frequency: 
+
+```{r keyword network metrics, cache = TRUE, fig.width = 10}
+graph_obj <- graph_from_data_frame(keyword_pairs, directed = FALSE)
+ec <- eigen_centrality(graph_obj)[[1]]
+ec_df <- data.frame(ec) 
+ec_df <- ec_df %>% mutate(name = rownames(ec_df)) %>%
+  arrange(desc(ec))
+names(ec_df[1]) <- "eigen_centrality"
+
+bet <- betweenness(graph_obj) %>%
+  data.frame() 
+bet <- bet %>% mutate(name = rownames(bet))
+names(bet)[1] <- "betweenness"
+
+deg <- degree(graph_obj) %>% 
+  data.frame()
+deg <- deg %>% mutate(name = rownames(deg))
+names(deg)[1] <- "degree_centrality"
+
+keyword_stats <- full_join(ec_df, bet, by = "name") %>%
+  full_join(deg, by = "name") %>%
+  select(name, everything()) %>%
+  arrange(desc(degree_centrality)) 
+
+#Add the frequency of each keyword for reference. 
+
+freq <- keyword_df %>%
+  group_by(keywords) %>%
+  count() %>%
+  rename("name" = "keywords")
+keyword_stats <- left_join(keyword_stats, freq, by = "name") %>% arrange(desc(n))
+
+
+#Choose the most frequent keywords. 
+keyword_stats_top <- keyword_stats[1:100,] %>%
+  filter(name != "climate change") %>%
+  mutate_at(vars(ec:degree_centrality), scale) #scaled to mean = 0, sd = 1
+
+plot_dat <- keyword_stats_top %>% data.table::melt(id.vars = c("name", "n"))
+
+label_names <- c("ec" = "Eigenvector centrality",
+                 "betweenness" = "Betweenness",
+                 "degree_centrality" = "Degree centrality")
+
+ggplot(plot_dat, aes(x = n, y = value)) +
+  geom_smooth(linetype = 2, size = 0.5, color = "grey20", fill = "grey80",
+              method = "lm") + 
+  geom_text(aes(label = name), size = 2, check_overlap = TRUE) +
+  facet_wrap(~variable, labeller = as_labeller(label_names)) + 
+  theme_few() +
+  labs(x = "Number of occurrences",
+       y = "Scaled value",
+       title = "Connectivity and frequency of 100 most frequent keywords")
+
+```
+
+This analysis seems like one of our most promising so far, but it also feels like something we sort of just made up. It does provide interesting information, though. First, it suggests that number of occurrences is very closely related to degree centrality. More interestingly, "fire", "mountain pine beetle", and "pacific northwest" all have relatively low eigenvector centrality relative to their frequency (as does climate, for that matter). This suggests that those words are not well connected to words with very high degree centrality (perhaps "climate")? However, many of those same words have high betweenness scores relative to their frequency. Would we consider "pacific northwest", "global warming", "climate", "mountain pine beetle", "fire", or "phenology" to be bridging concepts? If so, could we/should we identify what they are bridging? 
+
+# Major questions and next steps
+
+1. Are any of the network-level statistics about authorship interesting? Are there other statistics we should be calculating?
+
+2. Does the keyword analysis seem legitimate? 
+
+3. Based on what we've done here, how should we proceed? Do some of these areas seem more interesting than others to drill down into?
+
+
+
+# References
+
+Newman, M.E.J. (2001) The Structure of Scientific Collaboration Networks. _*PNAS*_ 98(2): 404-409. 
+
+
+
