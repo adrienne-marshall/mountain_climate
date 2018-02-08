@@ -3,4 +3,10 @@
 .RData
 .httr-oauth
 data/
-
+R copy/
+R/*_cache/
+R/*_files/
+coding_for_content_version_control/
+wos_recs_version_control/
+R/*.Rproj
+.Renviron
