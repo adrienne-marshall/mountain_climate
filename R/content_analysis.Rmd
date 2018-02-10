@@ -1,0 +1,320 @@
+---
+title: "Analyze results from coding for content"
+author: "Adrienne Marshall"
+date: "2/8/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, warning = FALSE)
+library(tidyverse)
+library(knitr)
+library(widyr)
+library(tidytext)
+library(maps)
+library(RColorBrewer)
+```
+
+# Introduction
+
+The goal of this document is to get our data that's been coded so far. In this case, we'll split it into only papers that have been coded twice, and see whether the two analyses are different.
+
+```{r get data, echo = F}
+dat <- read.csv("../results/tabular/content_coding.csv",
+                stringsAsFactors = F)
+names(dat) <- c("time", "name", "title", "paper_id", "I_A_M", "impact_type", "resolution", "extent", "location", "biome", "huc6", "data_type", "discipline", "topic", "concerns", "content1", "content2")
+
+# Get only papers that have been duplicated. 
+duplicated <- dat %>% 
+  group_by(paper_id) %>%
+  count(sort = T) %>%
+  filter(n > 1)
+
+# Make sure our names are consistent. 
+dat$name[dat$name == "Shana"] <- "SH"
+
+dat <- dat %>% filter(paper_id %in% duplicated$paper_id)
+
+# Make two datasets - one for the first coding, and one for the second.
+# randomize them first:
+dat <- dat[sample(nrow(dat)),]
+df1 <- dat %>% 
+  group_by(paper_id) %>%
+  slice(1) %>%
+  mutate(set = "set_1")
+
+df2 <- dat %>% 
+  group_by(paper_id) %>%
+  slice(2) %>%
+  mutate(set = "set_2")
+
+dat <- bind_rows(df1, df2)
+
+```
+
+```{r get states outlines}
+states <- map_data('state') %>%
+    subset(region %in% c("washington", "oregon", "idaho",
+                         "montana", "wyoming"))
+```
+
+
+ `df1` is a dataframe of each of the papers coded by one person, and `df2` is the same data frame, with papers coded by the other person. Do we have any apparent systematic bias in who is showing up as a coder in each one? 
+
+```{r check randomized separation}
+
+df1 %>% group_by(name) %>% count()
+df2 %>% group_by(name) %>%count()
+```
+
+
+# Summary analyses
+
+## Impacts, adaptation, mitigation
+
+```{r bar charts I_A_M}
+ggplot(dat, aes(x = I_A_M, fill = set)) + 
+  geom_bar(position = "dodge") + coord_flip() 
+```
+
+Haha, okay, looks like we should subset to Adaptation, Mitigation, Impacts, "None of these or not in the CRB", and "other"? 
+
+```{r update I_A_M}
+dat <- dat %>% 
+  mutate(I_A_M = as.character(I_A_M)) %>%
+  mutate(I_A_M = ifelse(I_A_M %in% c("Impacts", "Adaptation", "Mitigation", "None of these or not in the CRB"), I_A_M, "other"))
+
+ggplot(dat, aes(x = I_A_M, fill = set)) + 
+  geom_bar(position = "dodge") + coord_flip() 
+```
+
+## Impact types
+
+```{r impact_types}
+ggplot(dat, aes(x = impact_type, fill = set)) + 
+  geom_bar(position = "dodge") + coord_flip() 
+```
+
+That looks pretty good. I think we'll ultimately want to separate this so that we're just counting the individual categories (e.g., "projected impacts; observed impacts" will get counted in both those categories but not together), but this is fine for now. 
+
+## Resolution
+Resolution sort of has too many categories to really view; let's try this another way. 
+```{r resolution}
+dat %>%
+  group_by(resolution, set) %>%
+  count() %>%
+  spread(set, n) %>% 
+  arrange(desc(set_1), desc(set_2)) %>%
+  kable()
+```
+
+## Extent
+I looked into why so many papers don't have a resolution; they seem to all be not in the CRB. Let's do the same thing with extent: 
+
+```{r extent}
+dat %>%
+  group_by(extent, set) %>%
+  count() %>%
+  spread(set, n) %>% 
+  arrange(desc(set_1), desc(set_2)) %>%
+  kable()
+```
+
+Looks like there are a lot of variable answers here and maybe we need an NA? Let's take a look in graphical form anyway: 
+
+```{r extent2, fig.width = 12}
+dat %>%
+  group_by(extent, set) %>%
+  count() %>%
+  spread(set, n) %>% 
+  na.omit() %>%
+  ungroup() %>%
+  data.table::melt(id.vars = "extent") %>%
+  ggplot(aes(x = extent, fill = variable, y = value)) + 
+  geom_col(position = "dodge") + coord_flip() 
+```
+
+
+## Location
+
+Let's start with locations that have a numeric answer. For now, I took out anything that also words in it, even if it has points too. Let's also subset this to a reasonable spatial extent - maybe less than 500 km^2??
+
+There were also a few points that were way out at seas... so I assume those are mistakes, and got rid of them. 
+
+```{r location}
+point_dat <- dat[grepl("[[:digit:]]", dat$location),]
+point_dat <- point_dat[!grepl("[[:alpha:]]", point_dat$location),]
+
+ok_extents <- c("500 km2 - 1500 km2 (HUC 10 is 587 km2)",
+                "100 km2 - 500 km2 (HUC 12 is 100 km2)",
+                ">10km2 - 100km2 (smaller than HUC 12)",
+                ">1km2 - 10km2 (city of Moscow is 2.6 km2)",
+                "900m2 - 1km2",
+                "1-900 m2 (1-30m; Landsat size or smaller)",
+                "Point or plot scale")
+
+point_dat <- point_dat %>% 
+  filter(extent %in% ok_extents)
+
+point_dat <- point_dat %>% 
+  unnest_tokens(location, location, token = stringr::str_split, pattern = "; ") %>% 
+  separate(location, into = c("lat", "lon"), sep = ",", remove = F) %>%
+  mutate(lat = as.numeric(lat), lon = as.numeric(lon)) %>%
+  ungroup() %>%
+  mutate(paper_id = as.factor(paper_id)) 
+
+# Now check duplicates
+duplicates2 <- point_dat %>%
+  group_by(paper_id) %>%
+  count() %>%
+  filter(n > 1)
+
+point_dat <- point_dat %>% filter(paper_id %in% duplicates2$paper_id)
+
+point_dat <- point_dat %>% filter(lon > -125)
+
+ggplot() + 
+  geom_point(data = point_dat, 
+             aes(x = lon, y = lat, color = paper_id, shape = set),
+             show.legend = F, size = 3) + 
+  geom_polygon(data = states, aes(x = long, y = lat, group = group), fill = NA, color = "black") + 
+  labs(caption = "Colors represent different papers; shapes represent the two coders. Ideally we want them to match.")
+```
+
+These look pretty good! There aren't very many papers that are at this smallish scale (less than 1500 km^2) that we've duplicated observations and have points for... but those that are, look pretty reasonable. 
+
+```{r location2, eval = F, include = F}
+point_dat <- point_dat %>% select(paper_id, lon, lat, set)
+point_dat_lon <- spread(point_dat, key = set, value = "lon")
+names(point_dat_lon)[3:4] <- c("lon1", "lon2")
+
+point_dat_lat <- spread(point_dat, key = set, value = "lat")
+names(point_dat_lat)[3:4] <- c("lat1", "lat2")
+
+point_dat_wide <- full_join(point_dat_lat, point_dat_lon)
+point_dat_wide <- na.omit(point_dat_wide)
+
+
+## need to finish this...
+
+```
+
+## Biome
+
+```{r biome, fig.width = 12}
+biome_dat <- dat %>%
+  unnest_tokens(output = "biome_list", input = "biome", token = "regex", pattern = ", ")
+
+biome_dat <- biome_dat %>%
+  group_by(set, biome_list) %>%
+  count()
+
+ggplot(biome_dat, aes(x = biome_list, y = n, fill = set)) + 
+  geom_col(position = "dodge") + coord_flip() 
+```
+
+Those differences look like some of the biggest we've seen so far... might need to formally test if this is random or not? 
+
+## Huc6
+
+```{r hucs}
+huc_dat <- dat %>%
+  unnest_tokens(output = "huc6", input = "huc6", token = "regex", pattern = ", ")
+
+huc_dat <- huc_dat %>%
+  group_by(set, huc6) %>%
+  count()
+
+ggplot(huc_dat, aes(x = huc6, y = n, fill = set)) + 
+  geom_col(position = "dodge") + coord_flip() 
+```
+
+Agh, that one kind of makes my eyes hurt... and it looks like there is potentially a difference between the sets, particularly for the Canadian basins. 
+
+## Data type
+
+```{r data type}
+data_dat <- dat %>%
+  unnest_tokens(output = "data_type", input = "data_type", token = "regex", pattern = ", ")
+
+data_dat <- data_dat %>%
+  group_by(set, data_type) %>%
+  count()
+
+ggplot(data_dat, aes(x = data_type, y = n, fill = set)) + 
+  geom_col(position = "dodge") + coord_flip() 
+```
+
+That gives us a look at what we've got available. Some of these - I wonder if we could fit them into the same categories as each other. Here, I'll combine "gridded" and "gridded or polygons" because those are just different due to a change we made part way through our analysis. One thing to think about is how some of these other categories that we've added could fit into the categories that are delineated - I think the main point of this question was to use it to treat other categories appropriately.
+
+```{r data type2}
+standard_data_types <- dat %>% 
+  unnest_tokens(output = "data_type", input = "data_type", token = "regex", pattern = ", ") %>%
+  group_by(data_type) %>%
+  count(sort = T) %>% 
+  filter(n > 4) 
+
+data_dat <- data_dat %>% 
+  ungroup() %>%
+  mutate(data_type = ifelse(data_type %in% standard_data_types$data_type, 
+                            data_type, "other"))
+
+ggplot(data_dat, aes(x = data_type, y = n, fill = set)) + 
+  geom_col(position = "dodge") + coord_flip() 
+  
+```
+
+Looks like we have some disagreement about whether point data was or was not collected specifically for a given study... that might be something to address. 
+
+## Discipline
+
+```{r discipline}
+discipline_dat <- dat %>%
+  unnest_tokens(output = "discipline", input = "discipline", token = "regex", pattern = ", ")
+
+discipline_dat <- discipline_dat %>%
+  group_by(set, discipline) %>%
+  count()
+
+ggplot(discipline_dat, aes(x = discipline, y = n, fill = set)) + 
+  geom_col(position = "dodge") + coord_flip() 
+
+```
+
+
+## Topic
+
+```{r topic}
+# extract standard topics
+topics_standard <- dat %>% 
+  unnest_tokens(topic, topic, token = stringr::str_split, pattern = ", ") %>%
+  group_by(topic) %>% 
+  count() %>%
+  arrange(desc(n)) %>%
+  filter(n > 2)
+```
+
+
+## Topic*Location
+
+How often are different topics studied in different HUCs? Unfortunately, we currently have so many topics and HUCs that this approach doesn't really work... are there ways we could bin it? Or another way of looking at this that would give us more information? 
+
+One thing that might be better is maps - e.g., we could have many small multiples, where in each map, the HUCs are colored by the number of papers for each topic, or relative frequency for that topic? 
+
+```{r topic*location, fig.width = 12, fig.height = 12}
+df <- dat %>%
+  select(paper_id, set, topic, huc6) %>%
+  unnest_tokens(topic_list, topic, token = stringr::str_split, pattern = ", ") %>%
+  unnest_tokens(huc_list, huc6, token = stringr::str_split, pattern = ", ") %>%
+  ungroup() %>%
+  mutate(topic_list = ifelse(topic_list %in% topics_standard$topic, topic_list, "other"))
+
+ggplot(df, aes(x = huc_list, fill = topic_list)) + 
+  geom_bar(show.legend = T, position = "fill") +
+  coord_flip() +
+  facet_grid(set~.) + 
+  theme(legend.position = "bottom") 
+```
+
+
+
