@@ -1,7 +1,7 @@
 ---
 title: "Analyze results from coding for content"
 author: "Adrienne Marshall"
-date: "2/8/2018"
+date: "2/9/2018"
 output: html_document
 ---
 
@@ -13,6 +13,7 @@ library(widyr)
 library(tidytext)
 library(maps)
 library(RColorBrewer)
+library(forcats)
 ```
 
 # Introduction
@@ -50,6 +51,9 @@ df2 <- dat %>%
 
 dat <- bind_rows(df1, df2)
 
+# drop papers that don't belong in corpus
+dat <- dat %>% filter(I_A_M != "None of these or not in the CRB")
+
 ```
 
 ```{r get states outlines}
@@ -59,7 +63,7 @@ states <- map_data('state') %>%
 ```
 
 
- `df1` is a dataframe of each of the papers coded by one person, and `df2` is the same data frame, with papers coded by the other person. Do we have any apparent systematic bias in who is showing up as a coder in each one? 
+ `set_1` is a dataframe of each of the papers coded by one person, and `set_2` is the same data frame, with papers coded by the other person. Do we have any apparent systematic bias in who is showing up as a coder in each one? 
 
 ```{r check randomized separation}
 
@@ -91,11 +95,14 @@ ggplot(dat, aes(x = I_A_M, fill = set)) +
 ## Impact types
 
 ```{r impact_types}
-ggplot(dat, aes(x = impact_type, fill = set)) + 
+impact_dat <- dat %>% 
+  unnest_tokens(impact_type, impact_type, token = stringr::str_split, pattern = ", ")
+
+ggplot(impact_dat, aes(x = impact_type, fill = set)) + 
   geom_bar(position = "dodge") + coord_flip() 
 ```
 
-That looks pretty good. I think we'll ultimately want to separate this so that we're just counting the individual categories (e.g., "projected impacts; observed impacts" will get counted in both those categories but not together), but this is fine for now. 
+That looks pretty good, though climate change implications is showing up way more often in set2 than set1. I've separated out the papers where multiple impacts types were listed, though if we're interested in which papers do two types, we could re-combine them. 
 
 ## Resolution
 Resolution sort of has too many categories to really view; let's try this another way. 
@@ -137,9 +144,9 @@ dat %>%
 
 ## Location
 
-Let's start with locations that have a numeric answer. For now, I took out anything that also words in it, even if it has points too. Let's also subset this to a reasonable spatial extent - maybe less than 500 km^2??
+Let's start with locations that have a numeric answer. For now, I took out anything that also words in it, even if it has points too. Let's also subset this to a reasonable spatial extent - currently this is set to less than 1500 km$^2$.
 
-There were also a few points that were way out at seas... so I assume those are mistakes, and got rid of them. 
+There were also a few points that were way out at sea... so I assume those are mistakes, and got rid of them. 
 
 ```{r location}
 point_dat <- dat[grepl("[[:digit:]]", dat$location),]
@@ -181,7 +188,7 @@ ggplot() +
   labs(caption = "Colors represent different papers; shapes represent the two coders. Ideally we want them to match.")
 ```
 
-These look pretty good! There aren't very many papers that are at this smallish scale (less than 1500 km^2) that we've duplicated observations and have points for... but those that are, look pretty reasonable. 
+These look pretty good! There aren't very many papers that are at this smallish scale (less than 1500 km$^2$) that we've duplicated observations and have points for... but those that are, look pretty reasonable. 
 
 ```{r location2, eval = F, include = F}
 point_dat <- point_dat %>% select(paper_id, lon, lat, set)
@@ -209,7 +216,7 @@ biome_dat <- biome_dat %>%
   group_by(set, biome_list) %>%
   count()
 
-ggplot(biome_dat, aes(x = biome_list, y = n, fill = set)) + 
+ggplot(biome_dat, aes(x = fct_reorder(biome_list, n), y = n, fill = set)) + 
   geom_col(position = "dodge") + coord_flip() 
 ```
 
@@ -225,11 +232,11 @@ huc_dat <- huc_dat %>%
   group_by(set, huc6) %>%
   count()
 
-ggplot(huc_dat, aes(x = huc6, y = n, fill = set)) + 
+ggplot(huc_dat, aes(x = fct_reorder(huc6, n), y = n, fill = set)) + 
   geom_col(position = "dodge") + coord_flip() 
 ```
 
-Agh, that one kind of makes my eyes hurt... and it looks like there is potentially a difference between the sets, particularly for the Canadian basins. 
+Agh, that one kind of makes my eyes hurt... and it looks like there is a big difference between the sets.
 
 ## Data type
 
@@ -241,7 +248,7 @@ data_dat <- data_dat %>%
   group_by(set, data_type) %>%
   count()
 
-ggplot(data_dat, aes(x = data_type, y = n, fill = set)) + 
+ggplot(data_dat, aes(x = fct_reorder(data_type, n), y = n, fill = set)) + 
   geom_col(position = "dodge") + coord_flip() 
 ```
 
@@ -259,7 +266,7 @@ data_dat <- data_dat %>%
   mutate(data_type = ifelse(data_type %in% standard_data_types$data_type, 
                             data_type, "other"))
 
-ggplot(data_dat, aes(x = data_type, y = n, fill = set)) + 
+ggplot(data_dat, aes(x = fct_reorder(data_type, n), y = n, fill = set)) + 
   geom_col(position = "dodge") + coord_flip() 
   
 ```
@@ -276,7 +283,7 @@ discipline_dat <- discipline_dat %>%
   group_by(set, discipline) %>%
   count()
 
-ggplot(discipline_dat, aes(x = discipline, y = n, fill = set)) + 
+ggplot(discipline_dat, aes(x = fct_reorder(discipline, n), y = n, fill = set)) + 
   geom_col(position = "dodge") + coord_flip() 
 
 ```
@@ -291,7 +298,18 @@ topics_standard <- dat %>%
   group_by(topic) %>% 
   count() %>%
   arrange(desc(n)) %>%
-  filter(n > 2)
+  filter(n > 3)
+
+topic_dat <- dat %>%
+  unnest_tokens(output = "topic", input = "topic", token = "regex", pattern = ", ") %>%
+  mutate(topic = ifelse(topic %in% topics_standard$topic, topic, "other")) %>%
+  group_by(set, topic) %>%
+  count()
+
+ggplot(topic_dat, aes(x = fct_reorder(topic, n), y = n, fill = set)) + 
+  geom_col(position = "dodge") + coord_flip() 
+
+
 ```
 
 
