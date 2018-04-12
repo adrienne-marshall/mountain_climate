@@ -6,7 +6,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, cache = TRUE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, 
+                      warning = FALSE, autodep = TRUE)
 library(tidyverse)
 library(knitr)
 library(widyr)
@@ -14,6 +15,9 @@ library(tidytext)
 library(maps)
 library(RColorBrewer)
 library(forcats)
+library(viridis)
+library(stringr)
+library(ggthemes)
 ```
 
 # Introduction
@@ -21,20 +25,61 @@ library(forcats)
 The goal of this document is to get our data that's been coded so far. In this case, we'll split it into only papers that have been coded twice, and see whether the two analyses are different.
 
 ```{r get data, echo = F}
-dat <- read.csv("../results/tabular/content_coding.csv",
+dat_raw <- read.csv("../results/tabular/content_coding.csv",
                 stringsAsFactors = F)
-names(dat) <- c("time", "name", "title", "paper_id", "I_A_M", "impact_type", "resolution", "extent", "location", "biome", "huc6", "data_type", "discipline", "topic", "concerns", "content1", "content2")
+names(dat_raw) <- c("time", "name", "title", "paper_id", "I_A_M", "impact_type", "resolution", "extent", "location", "biome", "huc6", "data_type", "discipline", "topic", "concerns", "content1", "content2")
 
-# Get only papers that have been duplicated. 
-duplicated <- dat %>% 
+# Get rid of one weird row:
+dat_raw <- dat_raw %>% filter(time != "Timestamp")
+
+# Make sure our names are consistent. 
+dat_raw$name[dat_raw$name == "Shana"] <- "SH"
+
+# Adjust dat_raw titles for common punctuation issues, and make "combo" column. 
+dat_raw <- dat_raw %>% 
+  mutate(title = tolower(title)) %>%
+  mutate(title = gsub("\\.", "", title)) %>%
+  mutate(title = gsub("\n", "", title)) %>%
+  mutate(combo = paste0(paper_id, "_", title))
+
+# True paper ids/titles - get rid of common punctuation issues. 
+corpus <- read.csv("../data/final_lists/final_corpus.csv") %>% 
+  mutate(title = tolower(title)) %>%
+  mutate(title = gsub("\\.", "", title)) %>%
+  mutate(title = gsub("\n", "", title)) %>%
+  dplyr::select(final_id, title) %>%
+  mutate(combo = paste0(final_id, "_", title))
+
+# First, identify mislabels: 
+mislabels <- dat_raw %>%
+  mutate(title = tolower(title)) %>%
+  mutate(title = gsub("\\.", "", title)) %>%
+  mutate(title = gsub("\n", "", title)) %>%
+  mutate(combo = paste0(paper_id, "_", title)) %>%
+  filter(!combo %in% corpus$combo) %>%
+  select(combo, name)
+# gotta talk to CMC about this - mostly hers. 
+# Fix IDs so they're consistent - accept inconsistencies of titles. 
+# Paper 157 and 732 are the same. 
+dat_raw$paper_id[grepl("32_genetic architecture", dat_raw$combo)] <- 30
+dat_raw$paper_id[grepl("138_impacts of climate", dat_raw$combo)] <- 128
+dat_raw$paper_id[grepl("152_spatial variability", dat_raw$combo)] <- 153
+dat_raw$paper_id[grepl("160_changes in glacier", dat_raw$combo)] <- 157
+
+# Now IDs are consistent, even if titles have some typos. 
+duplicated <- dat_raw %>% 
   group_by(paper_id) %>%
   count(sort = T) %>%
   filter(n > 1)
 
-# Make sure our names are consistent. 
-dat$name[dat$name == "Shana"] <- "SH"
+no_dup <- dat_raw %>% anti_join(duplicated)
 
-dat <- dat %>% filter(paper_id %in% duplicated$paper_id)
+```
+
+```{r subset to duplicated}
+dat <- dat_raw %>% filter(paper_id %in% duplicated$paper_id) %>%
+  group_by(paper_id) %>%
+  slice(1:2)
 
 # Make two datasets - one for the first coding, and one for the second.
 # randomize them first:
@@ -66,11 +111,9 @@ states <- map_data('state') %>%
  `set_1` is a dataframe of each of the papers coded by one person, and `set_2` is the same data frame, with papers coded by the other person. Do we have any apparent systematic bias in who is showing up as a coder in each one? 
 
 ```{r check randomized separation}
-
 df1 %>% group_by(name) %>% count()
 df2 %>% group_by(name) %>%count()
 ```
-
 
 # Summary analyses
 
@@ -189,6 +232,44 @@ ggplot() +
 ```
 
 These look pretty good! There aren't very many papers that are at this smallish scale (less than 1500 km$^2$) that we've duplicated observations and have points for... but those that are, look pretty reasonable. 
+
+What if we plotted all the locations that have been coded - just to see if we have hotspots showing up?
+
+```{r plot all locations}
+point_dat <- dat_raw[grepl("[[:digit:]]", dat_raw$location),]
+point_dat <- point_dat[!grepl("[[:alpha:]]", point_dat$location),]
+
+point_dat <- point_dat %>% 
+  unnest_tokens(location, location, token = stringr::str_split, pattern = "; ") %>% 
+  separate(location, into = c("lat", "lon"), sep = ",", remove = F) %>%
+  mutate(lat = as.numeric(lat), lon = as.numeric(lon)) %>%
+  ungroup() %>%
+  mutate(paper_id = as.factor(paper_id)) 
+
+point_dat$lon[point_dat$lon < -125] <- NA
+point_dat$lat[point_dat$lat < 40] <- NA
+
+ggplot() + 
+  stat_density_2d(data = point_dat, 
+             aes(x = lon, y = lat, fill = ..level..),
+             geom = "polygon",
+             show.legend = F) + 
+  scale_fill_viridis(option = "A") + 
+    geom_point(data = point_dat, 
+             aes(x = lon, y = lat),
+             shape = 21, fill = "white", color = "black", show.legend = F) + 
+  geom_polygon(data = states, aes(x = long, y = lat, group = group), 
+               fill = NA, color = "black") +
+  scale_x_continuous(minor_breaks = seq(-125, -105, 1)) + 
+  scale_y_continuous(minor_breaks = seq(40, 53, 1)) + 
+  theme_few() +
+  theme(panel.grid.minor = element_line(color = "grey90"),
+        panel.grid.major = element_line(color = "grey80")) + 
+  coord_quickmap()
+```
+
+
+
 
 ```{r location2, eval = F, include = F}
 point_dat <- point_dat %>% select(paper_id, lon, lat, set)
@@ -335,4 +416,95 @@ ggplot(df, aes(x = huc_list, fill = topic_list)) +
 ```
 
 
+# Extra topics
+
+Make a list of the topics people write in as extra topics. Also, identify items in our list that don't get used. 
+
+```{r topics list}
+topic_list <- dat_raw %>% 
+  unnest_tokens(topic_list, topic, token = stringr::str_split, pattern = ", ") %>% 
+  unnest_tokens(topic_list, topic_list, token = stringr::str_split, pattern = "; ") %>%
+  group_by(topic_list) %>%
+  count(sort = T) 
+write.csv(topic_list, file = "../results/topics_used.csv",
+            row.names = F)
+```
+
+# Try mapping HUCs by discipline. 
+
+First, take a look at the HUC6 map, just to make sure the spatial data looks good. 
+
+```{r map hucs1}
+# Get huc map.
+huc6_df <- read.csv("../data/spatial/huc6_df.csv")
+huc6_df <- huc6_df %>% 
+  mutate(huc2 = str_sub(HUC6, 1, 2))
+huc6_df <- huc6_df %>% filter(huc2 == 17)
+
+huc6_df$HUC6 <- as.factor(huc6_df$HUC6)
+
+ggplot(huc6_df, aes(x = long, y = lat, group = group)) + 
+  geom_polygon(color = "black", fill = NA)
+
+# Count discipline for each HUC.
+df <- dat_raw %>% 
+  dplyr::select(paper_id, discipline, huc6) %>%
+  group_by(paper_id) %>%
+  slice(1) %>%
+  ungroup() %>%
+  filter(discipline != "")
+
+df <- df[!grepl("does this study address", df$discipline),]
+
+df <- df %>% 
+  unnest_tokens(discipline, discipline, 
+                token = stringr::str_split, pattern = ", ") %>%
+  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>%
+  filter(huc6 != "")
+
+# Set up to match HUC6s from multiple sources. 
+huc6_id <- unlist(str_extract_all(df$huc6, "[[:digit:]]", simplify = TRUE))
+huc6_id <- data.frame(huc6_id)
+huc6_id <- huc6_id %>% unite(col = "id", c("X1", "X2", "X3", "X4"), sep = "")
+df$huc6_id <- huc6_id$id
+df <- df %>% mutate(huc6_id = paste0(17, huc6_id))
+df$huc6_id[df$huc6_id == 17] <- NA
+
+# Filter to only disciplines that have at least several papers:
+disc <- df %>% group_by(discipline) %>% count(sort = T) %>%
+  filter(n > 4) # this cutoff is arbitrary. 
+
+# Count papers by discipline and huc.
+counts <- df %>% 
+  group_by(huc6_id, discipline) %>%
+  count(sort = T) %>%
+  filter(!is.na(huc6_id)) %>%
+  ungroup() %>%
+  mutate(huc6_id = as.factor(huc6_id)) %>%
+  filter(discipline %in% disc$discipline)
+
+# Make data frame to fill in zeros for HUCs with no studies in a given discipline.
+filler <- expand.grid(huc6_id = unique(counts$huc6_id), discipline = unique(counts$discipline))
+counts <- left_join(filler, counts)
+counts$n[is.na(counts$n)] <- 0
+
+plot_dat <- full_join(huc6_df, counts, by = c("HUC6" = "huc6_id"))
+
+
+  
+```
+
+Now, plot the HUCs colored by number of papers in a given discipline: 
+
+```{r map hucs by discipline 2, fig.width = 10, eval = F}
+# currently super slow... could there be a faster way???
+test <- plot_dat %>% filter(discipline %in% c("hydrology", "ecology"))
+Sys.time()
+ggplot(test, aes(x = long, y = lat, group = group, order = order)) + 
+  geom_polygon(aes(fill = n), color = "black") +
+  scale_fill_viridis(option = "A", direction = -1) + 
+  facet_wrap(~discipline) + 
+  coord_fixed(1.3)
+Sys.time()
+```
 
