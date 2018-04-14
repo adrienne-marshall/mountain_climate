@@ -6,7 +6,7 @@ library(tidytext)
 library(viridis)
 library(extrafont)
 
-dat <- read_csv("data/final_corpus.csv")
+dat <- read_csv("../data/final_lists/final_corpus.csv")
 
 dat <- dat %>%
   mutate_all(tolower)
@@ -17,7 +17,7 @@ njournals <- length(unique(dat$journal))
 
 #authors per paper
 authors_per_paper <- dat %>%
-  select(id, authors, year) %>% 
+  dplyr::select(id, authors, year) %>% 
   unnest_tokens(output = authors, input = authors, token = str_split, pattern = ";") %>%
   group_by(id, year) %>%
   count() %>%
@@ -31,7 +31,7 @@ plot_dat <- authors_per_paper %>%
 
 ggplot(plot_dat, aes(x = year, y = n)) + geom_point() + geom_smooth()
 
-author_df <- read_csv("data/authors.csv")
+author_df <- read_csv("../data/author_data/authors.csv")
 
 #number of authors:
 length(unique(author_df$author))
@@ -46,26 +46,6 @@ dat %>% group_by(journal) %>%
   count() %>% 
   ungroup() %>%
   arrange(desc(n))
-
-## Figure: number of papers per year----------
-annual <- dat %>% group_by(year) %>% 
-  filter(year < 2017) %>%
-  count() %>% 
-  ungroup() %>%
-  filter(!is.na(year)) %>%
-  mutate(year = as.numeric(year))
-
-p <- ggplot(annual, aes(x = year, y = n)) + 
-  geom_point() +
-  geom_line() +
-  theme_few() + 
-  scale_x_continuous(breaks = c(1990, 1995, 2000, 2005, 2010, 2015)) +
-  labs(x = "Year", y = "Number of papers")
-
-tiff("figures/publications_per_year.tiff", res = 300, units = 'in', width = 9, height = 6)
-p
-dev.off()
-
 
 
 ## Figure: Trajectories of most popular keywords--------

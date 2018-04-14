@@ -7,7 +7,7 @@ round1_arb_url <- "https://docs.google.com/spreadsheets/d/1QrMRc_AcVNoHDRNQsgKLb
 round1_arb_df <- round1_arb_url %>% 
   gs_url() %>% 
   gs_read()
-write_csv(round1_df, 
+write_csv(round1_arb_df, 
           "../results/tabular/round1_arbitrated.csv")
 
 # Findings from round 1 (not arbitrated):
@@ -18,7 +18,7 @@ round1_raw_df <- round1_raw_url %>%
 write_csv(round1_raw_df, 
           "../results/tabular/round1_raw.csv")
 
-# Second round responses: 
+# Second round responses: --------------
 round2_url <- "https://docs.google.com/spreadsheets/d/1OWYcXmI4mgJ8d9K2YCtCYzOeeyCZEoQIz51CUrt4zy0/edit#gid=1355036755"
 round2_df <- round2_url %>% 
   gs_url() %>% 
