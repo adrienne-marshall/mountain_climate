@@ -1,0 +1,129 @@
+---
+title: 'Mountain climate review: guide to scripts'
+author: "Adrienne Marshall"
+date: "4/13/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = F)
+library(tidyverse)
+```
+
+# Get data from different sources. 
+
+```{r scripts that get data}
+
+# Get from web of science.
+file.edit("get_recs.R")
+
+# Get from crossref.
+file.edit("crossref.Rmd")
+
+
+# Unite all sources 
+file.edit("aggregate_sources.R")
+
+
+# Exclude data based on exclusions function - also uses river_names. 
+file.edit("exclusions_fn.R")
+file.edit("river_names.R")
+```
+
+
+# Assign reviewers.
+
+## Assign reviewers for inclusion/exclusion stage.
+
+```{r assign inclusion/exclusion reviewers}
+file.edit("assignment2.R")
+file.edit("assignment3.R")
+file.edit("assignment4.R")
+file.edit("assignment5.R")
+file.edit("assignment6.R")
+```
+
+```{r aggregate data from inclusion/exclusion stage}
+file.edit("final_corpus.R")
+```
+
+```{r calculate kappa from inclusion/exclusion}
+file.edit("kappa_stats.R")
+```
+
+
+
+## Assign reviewers for the content analysis stage. 
+
+
+```{r assign reviewers for content}
+# First third: 
+file.edit("assign_content_reviewers.R")
+
+# Rest of the data: 
+file.edit("assign_content_reviewers2.R")
+```
+
+# Analysis that doesn't require content analysis. 
+
+```{r author networks}
+file.edit("clean_author_data.R")
+file.edit("network_analysis.Rmd")
+file.edit("network_summary.Rmd") # shorter version
+
+# Make some summary plots. 
+file.edit("summary_plots.R")
+
+# Identify the most prolific authors to manually get info for. 
+file.edit("top_authors.R")
+```
+
+
+# Analyze findings from content analysis.
+
+First, get our data from google sheets. You'll need to set up the `googlesheets` package to use this one effectively.
+
+```{r get from google sheets}
+source("get_from_google.R")
+
+# Rename columns in a sane way.
+source("rename_columns.R")
+
+# Will also need to aggregate from multiple runs:
+# file.edit("combine_content_analyses.R")
+
+# Check arbitration. 
+file.edit("check_arbitration.R")
+```
+
+We want to analyze across HUC6 units - so make a HUC6 layer: 
+
+```{r huc6 layer}
+file.edit("get_huc6.R")
+```
+
+
+Look at some initial exploratory work: 
+
+```{r initial exploratory}
+file.edit("content_analysis.Rmd") # could move into old. 
+```
+
+Figure 2: Number of papers over time
+```{r papers over time}
+file.edit("papers_over_time.R")
+```
+
+Figure x: Bar chart of spatial extents
+```{r spatial extents bar chart}
+file.edit("extents_bar_chart.R")
+```
+
+
+Figure 8: HUC6 maps
+```{r huc6_maps.R}
+file.edit("huc6_maps.R") # might be better to just use this to make data, and make a map in QGIS?
+file.edit("studies_per_huc.R")
+file.edit("huc6_heatmaps.R")
+```
+

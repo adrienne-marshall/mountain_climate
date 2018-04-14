@@ -12,3 +12,4 @@ R/*.Rproj
 .Renviron
 results/tabular
 results/topics_used.csv
+R/old/*_cache
