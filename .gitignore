@@ -10,6 +10,5 @@ coding_for_content_version_control/
 wos_recs_version_control/
 R/*.Rproj
 .Renviron
-results/tabular
 results/topics_used.csv
 R/old/*_cache
