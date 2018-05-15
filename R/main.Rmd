@@ -94,6 +94,9 @@ source("rename_columns.R")
 
 # Check arbitration. 
 file.edit("check_arbitration.R")
+
+# Get summary statistics.
+file.edit("summary_stats.R")
 ```
 
 We want to analyze across HUC6 units - so make a HUC6 layer: 
@@ -101,7 +104,6 @@ We want to analyze across HUC6 units - so make a HUC6 layer:
 ```{r huc6 layer}
 file.edit("get_huc6.R")
 ```
-
 
 Look at some initial exploratory work: 
 
@@ -119,11 +121,48 @@ Figure x: Bar chart of spatial extents
 file.edit("extents_bar_chart.R")
 ```
 
+Figure x. Network map of topics. 
+```{r topic network map}
+file.edit("topic_network_map.R")
+```
+
 
 Figure 8: HUC6 maps
-```{r huc6_maps.R}
+```{r huc6_maps}
 file.edit("huc6_maps.R") # might be better to just use this to make data, and make a map in QGIS?
 file.edit("studies_per_huc.R")
 file.edit("huc6_heatmaps.R")
+```
+
+Potential figure: map points. 
+This could potentially get laid over a HUC6 map? Not sure the best way to integrate. 
+```{r point map}
+file.edit("point_map.R")
+```
+
+## just for fun
+personal time tracker. 
+```{r time tracker}
+require(lubridate)
+df <- read_csv("../results/tabular/round2_raw.csv") %>%
+  rename("your_name" = `Your Name`) %>%
+  mutate(time_stamp = mdy_hms(Timestamp)) %>%
+  arrange(time_stamp) %>%
+  select(your_name, time_stamp) %>%
+  group_by(your_name) %>%
+  mutate(diff = time_stamp - lag(time_stamp)) %>%
+  mutate(diff_min = as.numeric(diff/60)) %>%
+  filter(diff_min < 60) 
+
+df %>%
+  group_by(your_name) %>%
+  summarise(med_time = median(diff_min),
+            mean_time = mean(diff_min),
+            n = n())
+
+ggplot(df, aes(x = diff_min)) + 
+  geom_histogram(binwidth = 3, aes(fill = your_name), show.legend = F) +
+  geom_freqpoly(binwidth = 3) + 
+  facet_wrap(~your_name)
 ```
 
