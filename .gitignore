@@ -4,6 +4,7 @@
 .httr-oauth
 data/backups
 data/author_data/author_data*.csv
+data/spatial/huc6_df.csv
 R copy/
 R/*_cache/
 R/*_files/
