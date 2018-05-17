@@ -2,12 +2,8 @@
 .Rhistory
 .RData
 .httr-oauth
-data/assignments
 data/backups
-data/excluded
-data/papers_inclusion
-data/raw
-data/rivers
+data/author_data/author_data*.csv
 R copy/
 R/*_cache/
 R/*_files/
