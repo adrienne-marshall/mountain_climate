@@ -92,11 +92,18 @@ source("rename_columns.R")
 # Will also need to aggregate from multiple runs:
 # file.edit("combine_content_analyses.R")
 
+# For Round 1:-----------------
 # Check arbitration. 
 file.edit("check_arbitration.R")
 
 # Get summary statistics.
 file.edit("summary_stats.R")
+
+# For Round 2: ---------------
+# Check arbitration for round 2: 
+file.edit("check_arbitration2.R")
+
+
 ```
 
 We want to analyze across HUC6 units - so make a HUC6 layer: 
