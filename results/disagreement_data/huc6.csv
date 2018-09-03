@@ -2,9 +2,11 @@ paper_id,title,agree
 209,invasive pathogens at alpine treeline: consequences for treeline dynamics,no
 282,characterizing the thermal suitability of instream habitat for salmonids: a cautionary example from the rocky mountains,no
 285,"glacier change of the columbia icefield, canadian rocky mountains, 1919-2009",no
+286,climate and streamflow trends in the columbia river basin: evidence for ecological and engineering resilience to climate change,no
 289,"perspectives on climate change, mountain hydrology, and water resources in the oregon cascades, usa",no
 290,modeling interannual variability in snow-cover development and melt for a semiarid mountain catchment,no
 295,"influences of the biophysical environment on blister rust and mountain pine beetle, and their interactions, in whitebark pine forests",no
+298,on glacier retreat and drought cycles in the rocky mountains of montana and canada,no
 300,modeling tamarisk (tamarix spp.) habitat and climate change effects in the northwestern united states,no
 304,mountain hydrology of the western united states,no
 309,fire-induced erosion and millennialscale climate change in northern ponderosa pine forests,no
@@ -30,6 +32,7 @@ paper_id,title,agree
 371,validation and sensitivity test of the distributed hydrology soil-vegetation model (dhsvm) in a forested mountain watershed,no
 386,enhanced sediment delivery in a changing climate in semi-arid mountain basins: implications for water resource management and aquatic habitat in the northern rocky mountains,no
 387,simulations show decreasing carbon stocks and potential for carbon emissions in rocky mountain forests over the next century,no
+391,"significance of trends toward earlier snowmelt runoff, columbia and missouri basin headwaters, western united states",no
 393,development of scale-free climate data for western canada for use in resource management,no
 395,genetic consequences of forest population dynamics influenced by historic climatic variability in the western usa,no
 399,snowmelt rate dictates streamflow,no
@@ -107,6 +110,7 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 634,mountain hemlock growth responds to climatic variability at annual and decadal time scales.,no
 636,growth responses of subalpine fir to climatic variability in the pacific northwest.,no
 639,trends in snow water equivalent in the pacific northwest and their climatic causes.,no
+640,"changes in the chemistry of lakes and precipitation in high-elevation national parks in the western united states, 1985-1999.",no
 646,climate change implications for wind power resources in the northwest united states.,no
 649,the relative impact of harvest and fire upon landscape-level dynamics of older forests: lessons from the northwest forest plan.,no
 654,climate-streamflow linkages in the north-central rocky mountains: implications for a changing climate.,no
@@ -134,11 +138,13 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 718,"fuel treatment impacts on estimated wildfire carbon loss from forests in montana, oregon, california, and arizona.",no
 719,gradient-based habitat affinities predict species vulnerability to drought.,no
 720,multitemporal snow cover mapping in mountainous terrain for landsat climate data record development.,no
+722,why land planners and water managers don't talk to one another and why they should!,no
 735,model analysis of mountain pine beetle (coleoptera: scolytidae) seasonality.,no
 742,recent changes in glacier area and volume within the southern canadian cordillera.,no
 746,declining summer flows of rocky mountain rivers: changing seasonal hydrology and probable impacts on floodplain forests.,no
 749,"postfire changes in forest carbon storage over a 300-year chronosequence of <i xmlns=""http://www.w3.org/1999/xhtml"">pinus contorta</i>-dominated forests.",no
 754,spatial variability in tree regeneration after wildfire delays and dampens future bark beetle outbreaks.,no
+756,"disturbance, equilibrium, and environmental variability: what is 'natural' vegetation in a changing environment?",no
 759,sensitivity of juvenile salmonid growth to future climate trends,no
 761,timing of redd construction by fall chinook salmon in the hanford reach of the columbia river,no
 775,petrophysical and geochemical properties of columbia river flood basalt: implications for carbon sequestration,no
@@ -156,7 +162,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 226,"summer stream temperatures influence sculpin distributions and spatial partitioning in the upper clark fork river basin, montana",yes
 283,potential effects of climate change on streambed scour and risks to salmonid survival in snow-dominated mountain basins,yes
 284,oregon hydrologic landscapes: a classification framework,yes
-286,climate and streamflow trends in the columbia river basin: evidence for ecological and engineering resilience to climate change,yes
 287,landscape-scale analysis of aboveground tree carbon stocks affected by mountain pine beetles in idaho,yes
 288,"climatic, landform, microtopographic, and overstory canopy controls of tree invasion in a subalpine meadow landscape, oregon cascades, usa",yes
 291,small soil storage capacity limits benefit of winter snowpack to upland vegetation,yes
@@ -165,7 +170,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 294,"climate determines upper, but not lower, altitudinal range limits of pacific northwest conifers",yes
 296,modeling the effects of developmental variation on insect phenology,yes
 297,effects of climate change and wildfire on stream temperatures and salmonid thermal habitat in a mountain river network,yes
-298,on glacier retreat and drought cycles in the rocky mountains of montana and canada,yes
 299,optimized flood control in the columbia river basin for a global warming scenario,yes
 301,mountain pine beetle and forest carbon feedback to climate change,yes
 302,anticipated climate warming effects on bull trout habitats and populations across the interior columbia river basin,yes
@@ -213,7 +217,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 385,climate change could alter the distribution of mountain pine beetle outbreaks in western canada,yes
 389,deep groundwater mediates streamflow response to climate warming in the oregon cascades,yes
 390,spatial patterns of forest characteristics in the western united states derived from inventories,yes
-391,"significance of trends toward earlier snowmelt runoff, columbia and missouri basin headwaters, western united states",yes
 392,the structure of genetic diversity in engelmann spruce and a comparison with blue spruce,yes
 394,downscaling simulations of future global climate with application to hydrologic modelling,yes
 396,mid-century ensemble regional climate change scenarios for the western united states,yes
@@ -312,7 +315,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 569,pacific northwest regional assessment: the impacts of climate variability and climate change on the water resources of the columbia river basin.,yes
 570,"are climate-tree growth relationships changing in north-central idaho, u.s.a.?",yes
 571,a comparison of delta change and downscaled gcm scenarios for three mountainous basins in the united states.,yes
-573,"growth response of ponderosa pine (pinus ponderosa) to climate in the eastern cascade mountains, washington, u.s.a.: implications for climatic change.",yes
 576,"carbon storage in subalpine tree island, north cascade range, washington.",yes
 578,"rocky mountain ecosystems: diversity, complexity and interactions.",yes
 582,a bird's eye view of small tenure holdings in british columbia.,yes
@@ -345,7 +347,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 632,phenology-mediated effects of climatic change on some simulated british columbia forests.,yes
 637,trends in temperature and precipitation in the pacific northwest during the twentieth century,yes
 638,hydroclimate of the western united states based on observations and regional climate simulation of 1981-2000. part ii: mesoscale enso anomalies.,yes
-640,"changes in the chemistry of lakes and precipitation in high-elevation national parks in the western united states, 1985-1999.",yes
 641,"postglacial fire, vegetation, and climate history in the clearwater range, northern idaho, usa",yes
 641,"postglacial fire, vegetation, and climate history in the clearwater range, northern idaho, usa.",yes
 642,climate precursors of multidecadal drought variability in the western united states.,yes
@@ -405,7 +406,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 715,american kestrel reproduction in southwestern idaho: annual variation and long-term trends.,yes
 716,whitebark pine vulnerability to climate-driven mountain pine beetle disturbance in the greater yellowstone ecosystem.,yes
 721,imputing forest carbon stock estimates from inventory plots to a nationally continuous coverage.,yes
-722,why land planners and water managers don't talk to one another and why they should!,yes
 723,landscape-scale eco-evolutionary dynamics: selection by seed predators and fire determine a major reproductive strategy.,yes
 724,mountain pine beetles colonizing historical and naive host trees are associated with a bacterial community highly enriched in genes contributing to terpene metabolism.,yes
 725,hydrothermal assessment of temporal variability in seedbed microclimate.,yes
@@ -431,7 +431,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 751,quantifying the relative contributions of forest change and climatic variability to hydrology in large watersheds: a critical review of research methods,yes
 752,"rural nevada and climate change: vulnerability, beliefs, and risk perception.",yes
 753,"climate change perception, observation and policy support in rural nevada: a comparative analysis of native americans, non-native ranchers and farmers and mainstream america.",yes
-756,"disturbance, equilibrium, and environmental variability: what is 'natural' vegetation in a changing environment?",yes
 757,"quantifying the contribution of glacier runoff to streamflow in the upper columbia river basin, canada",yes
 760,human and climate impacts on columbia river hydrology and salmonids,yes
 762,"plant succession after hydrologic disturbance: inferences from contemporary vegetation on a chronosequence of bars, willamette river, oregon, usa",yes

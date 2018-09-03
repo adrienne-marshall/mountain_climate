@@ -24,3 +24,10 @@ round2_df <- round2_url %>%
   gs_url() %>% 
   gs_read()
 write_csv(round2_df, "../results/tabular/round2_raw.csv")
+
+# Findings from round 2 - arbitrated. 
+round2_arb_url <- "https://docs.google.com/spreadsheets/d/1DJkG4KAg0z_92iDTivvUneppHk9sXDFW58Si8Q3B42I/edit#gid=1862807847"
+round2_arb_df <- round2_arb_url %>% 
+  gs_url() %>% 
+  gs_read()
+write_csv(round2_arb_df, "../results/tabular/round2_arbitrated.csv")

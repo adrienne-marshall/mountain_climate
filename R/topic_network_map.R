@@ -1,4 +1,4 @@
-# The point of this file is to map summary statistics across HUC6 unites. 
+# This script maps relationships between topics. 
 # We should go through topics and consider binning those that are user-input.
 
 library(tidyverse)
@@ -10,14 +10,15 @@ library(widyr)
 library(cowplot)
 
 # Get data - should ultimately be combination of first and second round. 
-dat <- read_csv("../results/tabular/single_copy_results.csv")
+dat <- read_csv("../results/tabular/all_dat_cleaned.csv")
 
 # Get topics.
 topic_df <- dat %>%
   dplyr::select(paper_id, topic) %>%
   unnest_tokens(input = topic, output = topic, token = stringr::str_split, pattern = ",") %>%
   mutate(topic = str_trim(topic)) %>%
-  filter(!is.na(topic))
+  filter(!is.na(topic)) %>% 
+  filter(topic != "pdo)")
 
 # Subset to top topics.
 top_topics <- topic_df %>%
@@ -43,6 +44,11 @@ p1 <- topic_pairs %>%
                  point.padding = unit(0.1, "lines"),
                  size = 3) +
   theme_void()
+
+pdf("../results/figures/topic_network_graph.pdf", 
+    width = 6, height = 6)
+p1
+dev.off()
 
 # Linear layout.
 p2 <- topic_pairs %>%

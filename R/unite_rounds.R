@@ -1,0 +1,106 @@
+# Unite both rounds of data collection. 
+library(tidyverse)
+
+# Get all data.
+dat <- read_csv("../results/tabular/all_arbitrated_renamed.csv")
+
+r1 <- read_csv("../results/tabular/round1_arbitrated_renamed.csv")
+r2 <- read_csv("../results/tabular/round2_arbitrated_renamed.csv")
+
+# Inclusion_IAM-----------
+dat <- dat %>% 
+  mutate(inclusion_IAM = tolower(inclusion_IAM))
+
+# Subset to included papers only. ---------
+dat <- dat %>% filter(inclusion_IAM %in% c("impacts", "adaptation", "mitigation"))
+
+# Extent--------
+dat <- dat %>% mutate(extent = tolower(extent))
+
+# Make changes semi-manually.
+dat <- dat %>% 
+  mutate(extent = case_when(str_detect(extent, "point or plot") ~ "point",
+                            str_detect(extent, "1-900") ~ "point",
+                            str_detect(extent, "1-100 km2") ~ "1 - 100 km2",
+                            str_detect(extent, ">10km2") ~ "1 - 100 km2",
+                            str_detect(extent, "900m2 - 1km") ~ "1 - 100 km2",
+                            str_detect(extent, ">1km2 - 10km2") ~ "1 - 100 km2",
+                            str_detect(extent, "100 km2 - 1,500 km2") ~ "100 - 1500 km2",
+                            str_detect(extent, "100 km2 - 500 km2") ~ "100 - 1500 km2",
+                            str_detect(extent, "500 km2 - 1500 km2") ~ "100 - 1500 km2",
+                            str_detect(extent, "1,500 km2 - 25,000 km2") ~ "1500 - 2500 km2",
+                            str_detect(extent, "1500 km2 - 25000 km2") ~ "1500 - 25000 km2",
+                            str_detect(extent, "25,000 km2 - 40,000") ~ "25000 - 40000 km2",
+                            str_detect(extent, "larger than 40") ~ "40000 km2 - PNW", # order is important here. 
+                            str_detect(extent, "pacific northwest") ~ "pacific northwest",
+                            str_detect(extent, "western us") ~ "western us",
+                            str_detect(extent, "continental") ~ "western us",
+                            TRUE ~ extent)) 
+
+
+# Location-----------
+# No good way to do this automatically. 
+
+# Biome-----------
+dat <- dat %>% mutate(biome = tolower(biome))
+dat <- dat %>% 
+  mutate(biome = case_when(is.na(biome) ~ "n/a (not biome specific or all biomes - see codebook)",
+                           TRUE ~ biome))
+
+# Huc6------------
+# Make all numeric. 
+dat <- dat %>% 
+  unnest_tokens(huc6, huc6, token = str_split, pattern = ", ") %>% 
+  mutate(huc6 = gsub("\\s*\\([^\\)]+\\)", "", huc6)) %>% # get rid of parentheses. 
+  filter(huc6 != "both us and canada") %>% # got separated by comma
+  mutate(huc6 = ifelse(str_detect(huc6, "[[:digit:]]"), 
+                       str_replace(huc6, "\\D.*", ""),
+                       huc6)) %>% # extract digits only.
+  filter(!str_detect(huc6, "dry cr. exp.")) %>%
+  mutate(huc6 = case_when(str_detect(huc6, "all in crb u") ~ "0101, 0102, 0103, 0200, 0300, 0401, 0402, 0501, 0502, 0601, 0602, 0603, 0701, 0702, 0703, 0800, 0900, 1002",
+                          str_detect(huc6, "all crb") ~ "0101, 0102, 0103, 0200, 0300, 0401, 0402, 0501, 0502, 0601, 0602, 0603, 0701, 0702, 0703, 0800, 0900, 1002, kooteney, okanagan, columbia",
+                          str_detect(huc6, "all in crb canada") ~ "kooteney, okanagan, columbia",
+                          str_detect(huc6, "all washington") ~ "0102, 0103, 0200, 0300, 0601, 0701, 0800",
+                          str_detect(huc6, "all idaho") ~ "0101, 0102, 0103, 0603, 0601, 0602, 0502, 0501, 0401, 0402",
+                          str_detect(huc6, "all oregon") ~ "0601, 0701, 0502, 0702, 0501, 0200, 0703, 0800, 0900, 1002",
+                          str_detect(huc6, "in the rocky") ~ "kooteney, okanagan, columbia, 0101, 0102, 0103, 0604, 0602, 0401, 0402",
+                          str_detect(huc6, "anadromous") ~ "0800, 0900, 0701, 0702, 0703, 0200, 0300, 0601, 0602",
+                          str_detect(huc6, "wyoming") ~ "0401",
+                          TRUE ~ huc6)) %>% 
+  nest(huc6) %>% 
+  mutate(huc6 = purrr::map(data, unlist)) %>% 
+  mutate(huc6 = map_chr(huc6, paste, collapse = ", ")) %>% 
+  dplyr::select(-data)
+
+# Discipline------------
+# Just make lower case. 
+dat <- dat %>% mutate(discipline = tolower(discipline))
+
+# Topics---------
+dat %>% 
+  mutate(topic = gsub("\\s*\\([^\\)]+\\)", "", topic)) %>% 
+  unnest_tokens(topic, topic, token = str_split, pattern = ",") %>% 
+  unnest_tokens(topic, topic, token = str_split, pattern = ";") %>%
+  mutate(topic = str_trim(topic)) %>% 
+  group_by(topic) %>% 
+  count(sort = T) %>% 
+  filter(topic != "") %>% 
+  mutate(n = ceiling(n/2)) %>% 
+  write_csv("../results/tabular/topics_used.csv")
+
+# Still need to replace topics... 
+
+
+# Projected-----------
+# nothing to change. 
+
+# Observed------------
+# nothing to change. 
+
+# New data------------
+# nothing to change.
+
+# Make just one version of each paper.
+dat <- dat %>% group_by(paper_id) %>% slice(1) %>% ungroup()
+
+write_csv(dat, "../results/tabular/all_dat_cleaned.csv")

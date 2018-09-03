@@ -81,12 +81,15 @@ file.edit("top_authors.R")
 
 # Analyze findings from content analysis.
 
+## Get and clean our coded data: 
+
 First, get our data from google sheets. You'll need to set up the `googlesheets` package to use this one effectively.
 
 ```{r get from google sheets}
 source("get_from_google.R")
 
 # Rename columns in a sane way.
+# Also combines arbitrated data from rounds 1 and 2. 
 source("rename_columns.R")
 
 # Will also need to aggregate from multiple runs:
@@ -96,14 +99,19 @@ source("rename_columns.R")
 # Check arbitration. 
 file.edit("check_arbitration.R")
 
+# For Round 2: ---------------
+# Check agreement (before arbitration): 
+file.edit("check_agreement2.R")
+
+# Check arbitration. ----------
+file.edit("check_arbitration_all.R")
+
+# Unite both rounds. ---------
+# Currently, some have different values (e.g., hucs)
+file.edit("unite_rounds.R")
+
 # Get summary statistics.
 file.edit("summary_stats.R")
-
-# For Round 2: ---------------
-# Check arbitration for round 2: 
-file.edit("check_arbitration2.R")
-
-
 ```
 
 We want to analyze across HUC6 units - so make a HUC6 layer: 
@@ -111,6 +119,8 @@ We want to analyze across HUC6 units - so make a HUC6 layer:
 ```{r huc6 layer}
 file.edit("get_huc6.R")
 ```
+
+## Analyze and visualize the coded data: 
 
 Look at some initial exploratory work: 
 
@@ -128,11 +138,11 @@ Figure x: Bar chart of spatial extents
 file.edit("extents_bar_chart.R")
 ```
 
-Figure x. Network map of topics. 
+Figure x. Network map of topics; network map of disciplines. 
 ```{r topic network map}
 file.edit("topic_network_map.R")
+file.edit("discipline_network_map.R")
 ```
-
 
 Figure 8: HUC6 maps
 ```{r huc6_maps}
@@ -147,4 +157,8 @@ This could potentially get laid over a HUC6 map? Not sure the best way to integr
 file.edit("point_map.R")
 ```
 
+Figure 9. Topics and disciplines covered by impacts, adaptation, and mitigation: 
+```{r IAM*topic}
+file.edit("IAM_topic_discipline.R")
+```
 

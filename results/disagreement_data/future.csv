@@ -37,6 +37,7 @@ paper_id,title,agree
 546,surface water input from snowmelt and rain throughfall in western juniper: potential impacts of climate change and shifts in semi-arid vegetation.,no
 557,statistical precipitation downscaling over the northwestern united states using numerically simulated precipitation as a predictor,no
 566,transferring soils from high- to low-elevation forests increases nitrogen cycling rates: climate change implications.,no
+568,the effect of climate change on floods in british columbia.,no
 608,climate change and stream temperature projections in the columbia river basin: habitat implications of spatial variation in hydrologic drivers.,no
 613,"floristic similarity, diversity and endemism as indicators of refugia characteristics and needs in the west.",no
 620,the natural history of the south hills crossbill in relation to its impending extinction.,no
@@ -51,6 +52,7 @@ paper_id,title,agree
 676,climate change impacts on maritime mountain snowpack in the oregon cascades.,no
 681,mountain landscapes offer few opportunities for high-elevation tree species migration.,no
 686,a simple framework for assessing the sensitivity of mountain watersheds to warming-driven snowpack loss.,no
+692,"application of a hybrid forest growth model to evaluate climate change impacts on productivity, nutrient cycling and mortality in a montane forest ecosystem.",no
 699,"community structure, biodiversity, and ecosystem services in treeline whitebark pine communities: potential impacts from a non-native pathogen.",no
 719,gradient-based habitat affinities predict species vulnerability to drought.,no
 740,carbon storage on landscapes with stand-replacing fires.,no
@@ -267,11 +269,9 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",yes
 564,"the effect of observation time and sampling frequency on mean daily maximum, minimum and average temperature.",yes
 565,areal extent of seasonal snow cover in a changed climate.,yes
 567,potential climate change impacts on mountain watersheds in the pacific northwest.,yes
-568,the effect of climate change on floods in british columbia.,yes
 569,pacific northwest regional assessment: the impacts of climate variability and climate change on the water resources of the columbia river basin.,yes
 570,"are climate-tree growth relationships changing in north-central idaho, u.s.a.?",yes
 571,a comparison of delta change and downscaled gcm scenarios for three mountainous basins in the united states.,yes
-573,"growth response of ponderosa pine (pinus ponderosa) to climate in the eastern cascade mountains, washington, u.s.a.: implications for climatic change.",yes
 574,trends in temperature and precipitation in the pacific northwest during the twentieth century.,yes
 575,"modelling conifer species distributions in mountain forests of washington state, usa.",yes
 576,"carbon storage in subalpine tree island, north cascade range, washington.",yes
@@ -371,7 +371,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",yes
 690,"hydro-meteorological drivers and sources of suspended sediment flux in the pro-glacial zone of the retreating castle creek glacier, cariboo mountains, british columbia, canada",yes
 690,"hydro-meteorological drivers and sources of suspended sediment flux in the pro-glacial zone of the retreating castle creek glacier, cariboo mountains, british columbia, canada.",yes
 691,projected major fire and vegetation changes in the pacific northwest of the conterminous united states under selected cmip5 climate futures.,yes
-692,"application of a hybrid forest growth model to evaluate climate change impacts on productivity, nutrient cycling and mortality in a montane forest ecosystem.",yes
 694,snow cover variability in a forest ecotone of the oregon cascades via modis terra products.,yes
 695,influence of winter season climate variability on snow-precipitation ratio in the western united states.,yes
 696,how will climate change affect wildland fire severity in the western us?,yes

@@ -3,6 +3,7 @@ paper_id,title,agree
 209,invasive pathogens at alpine treeline: consequences for treeline dynamics,no
 284,oregon hydrologic landscapes: a classification framework,no
 285,"glacier change of the columbia icefield, canadian rocky mountains, 1919-2009",no
+286,climate and streamflow trends in the columbia river basin: evidence for ecological and engineering resilience to climate change,no
 289,"perspectives on climate change, mountain hydrology, and water resources in the oregon cascades, usa",no
 290,modeling interannual variability in snow-cover development and melt for a semiarid mountain catchment,no
 291,small soil storage capacity limits benefit of winter snowpack to upland vegetation,no
@@ -73,6 +74,7 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 544,regional carbon cycle responses to 25 years of variation in climate and disturbance in the us pacific northwest.,no
 564,"the effect of observation time and sampling frequency on mean daily maximum, minimum and average temperature.",no
 567,potential climate change impacts on mountain watersheds in the pacific northwest.,no
+568,the effect of climate change on floods in british columbia.,no
 578,"rocky mountain ecosystems: diversity, complexity and interactions.",no
 591,controls on the temporal and spatial variability of soil moisture in a mountainous landscape: the signature of snow and complex terrain.,no
 599,global weirding in british columbia: climate change and the habitat of terrestrial vertebrates.,no
@@ -116,6 +118,7 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 720,multitemporal snow cover mapping in mountainous terrain for landsat climate data record development.,no
 721,imputing forest carbon stock estimates from inventory plots to a nationally continuous coverage.,no
 727,strong selection genome-wide enhances fitness trade-offs across environments and episodes of selection.,no
+730,climate change in yellowstone national park: is the drought-related risk of wildfires increasing?,no
 732,"changes in glacier and alpine runoff in the north cascade range, washington, usa 1985-1993.",no
 733,future climate in the yellowstone national park region and its potential impact on vegetation.,no
 737,physiology on a landscape scale: plant-animal interactions.,no
@@ -142,7 +145,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 226,"summer stream temperatures influence sculpin distributions and spatial partitioning in the upper clark fork river basin, montana",yes
 282,characterizing the thermal suitability of instream habitat for salmonids: a cautionary example from the rocky mountains,yes
 283,potential effects of climate change on streambed scour and risks to salmonid survival in snow-dominated mountain basins,yes
-286,climate and streamflow trends in the columbia river basin: evidence for ecological and engineering resilience to climate change,yes
 287,landscape-scale analysis of aboveground tree carbon stocks affected by mountain pine beetles in idaho,yes
 288,"climatic, landform, microtopographic, and overstory canopy controls of tree invasion in a subalpine meadow landscape, oregon cascades, usa",yes
 293,changes in spring snowpack for selected basins in the united states for different climate-change scenarios,yes
@@ -308,11 +310,9 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 561,"long-duration drought variability and impacts on ecosystem services: a case study from glacier national park, montana",yes
 565,areal extent of seasonal snow cover in a changed climate.,yes
 566,transferring soils from high- to low-elevation forests increases nitrogen cycling rates: climate change implications.,yes
-568,the effect of climate change on floods in british columbia.,yes
 569,pacific northwest regional assessment: the impacts of climate variability and climate change on the water resources of the columbia river basin.,yes
 570,"are climate-tree growth relationships changing in north-central idaho, u.s.a.?",yes
 571,a comparison of delta change and downscaled gcm scenarios for three mountainous basins in the united states.,yes
-573,"growth response of ponderosa pine (pinus ponderosa) to climate in the eastern cascade mountains, washington, u.s.a.: implications for climatic change.",yes
 574,trends in temperature and precipitation in the pacific northwest during the twentieth century.,yes
 575,"modelling conifer species distributions in mountain forests of washington state, usa.",yes
 576,"carbon storage in subalpine tree island, north cascade range, washington.",yes
@@ -419,7 +419,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 726,"climate, fire size, and biophysical setting control fire severity and spatial pattern in the northern cascade range, usa.",yes
 728,exposure of u.s. national parks to land use and climate change 1900-2100.,yes
 729,lilies at the limit: variation in plant-pollinator interactions across an elevational range.,yes
-730,climate change in yellowstone national park: is the drought-related risk of wildfires increasing?,yes
 731,"invasion of subalpine meadows by lodgepole pine in yellowstone national park, wyoming, usa",yes
 731,"invasion of subalpine meadows by lodgepole pine in yellowstone national park, wyoming, usa.",yes
 734,demography of the yellowstone grizzly bears.,yes

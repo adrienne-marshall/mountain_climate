@@ -1,9 +1,10 @@
 # Make a figure that shows how many papers are in our corpus over time. 
 
 library(tidyverse)
+library(ggthemes)
 
 # Get data - should be incorporating both sets. 
-dat <- read_csv("../results/tabular/single_copy_results.csv") %>%
+dat <- read_csv("../results/tabular/all_dat_cleaned.csv") %>%
   rename("final_id" = "paper_id")
 corpus <- read_csv("../data/final_lists/final_corpus.csv")
 

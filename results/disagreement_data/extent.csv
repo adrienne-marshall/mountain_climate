@@ -12,6 +12,7 @@ paper_id,title,agree
 295,"influences of the biophysical environment on blister rust and mountain pine beetle, and their interactions, in whitebark pine forests",no
 296,modeling the effects of developmental variation on insect phenology,no
 297,effects of climate change and wildfire on stream temperatures and salmonid thermal habitat in a mountain river network,no
+298,on glacier retreat and drought cycles in the rocky mountains of montana and canada,no
 299,optimized flood control in the columbia river basin for a global warming scenario,no
 300,modeling tamarisk (tamarix spp.) habitat and climate change effects in the northwestern united states,no
 311,"carbon implications of current and future effects of drought, fire and management on pacific northwest forests",no
@@ -81,6 +82,7 @@ paper_id,title,agree
 497,local-scale validation of the surface observation gridding system with weather observations in a semi-arid environment.,no
 498,"modeling amphibian energetics, habitat suitability, and movements of western
 toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
+499,comparison of growth and stress in resident redband trout held in laboratory simulations of montane and desert summer temperature cycles.,no
 508,modelling climate change impacts on spring runoff for the rocky mountains of montana and alberta ii: runoff change projections using future scenarios.,no
 509,"periglacial debris-flow initiation and susceptibility and glacier recession from imagery, airborne lidar, and ground-based mapping.",no
 511,downscaling extremes - an intercomparison of multiple statistical methods for present climate.,no
@@ -106,6 +108,7 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 564,"the effect of observation time and sampling frequency on mean daily maximum, minimum and average temperature.",no
 566,transferring soils from high- to low-elevation forests increases nitrogen cycling rates: climate change implications.,no
 567,potential climate change impacts on mountain watersheds in the pacific northwest.,no
+568,the effect of climate change on floods in british columbia.,no
 570,"are climate-tree growth relationships changing in north-central idaho, u.s.a.?",no
 571,a comparison of delta change and downscaled gcm scenarios for three mountainous basins in the united states.,no
 575,"modelling conifer species distributions in mountain forests of washington state, usa.",no
@@ -150,6 +153,7 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 683,drought-triggered western spruce budworm outbreaks in the interior pacific northwest: a multi-century dendrochronological record.,no
 686,a simple framework for assessing the sensitivity of mountain watersheds to warming-driven snowpack loss.,no
 689,climate contributors to forest mosaics: ecological persistence following wildfire.,no
+692,"application of a hybrid forest growth model to evaluate climate change impacts on productivity, nutrient cycling and mortality in a montane forest ecosystem.",no
 698,adaptation of lodgepole pine and interior spruce to climate: implications for reforestation in a warming world.,no
 699,"community structure, biodiversity, and ecosystem services in treeline whitebark pine communities: potential impacts from a non-native pathogen.",no
 701,seedling regeneration in the alpine treeline ecotone: comparison of wood microsites and adjacent soil substrates.,no
@@ -161,6 +165,7 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 717,selection of spatial-temporal lattice models: assessing the impact of climate conditions on a mountain pine beetle outbreak.,no
 718,"fuel treatment impacts on estimated wildfire carbon loss from forests in montana, oregon, california, and arizona.",no
 719,gradient-based habitat affinities predict species vulnerability to drought.,no
+722,why land planners and water managers don't talk to one another and why they should!,no
 727,strong selection genome-wide enhances fitness trade-offs across environments and episodes of selection.,no
 732,"changes in glacier and alpine runoff in the north cascade range, washington, usa 1985-1993.",no
 733,future climate in the yellowstone national park region and its potential impact on vegetation.,no
@@ -192,7 +197,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 286,climate and streamflow trends in the columbia river basin: evidence for ecological and engineering resilience to climate change,yes
 287,landscape-scale analysis of aboveground tree carbon stocks affected by mountain pine beetles in idaho,yes
 291,small soil storage capacity limits benefit of winter snowpack to upland vegetation,yes
-298,on glacier retreat and drought cycles in the rocky mountains of montana and canada,yes
 301,mountain pine beetle and forest carbon feedback to climate change,yes
 302,anticipated climate warming effects on bull trout habitats and populations across the interior columbia river basin,yes
 304,mountain hydrology of the western united states,yes
@@ -293,7 +297,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 488,flood quantiles in a changing climate: seasonal forecasts and causal relations.,yes
 489,"assessing the past and future distribution and productivity of ponderosa pine in the pacific northwest using a process model, 3-pg.",yes
 493,combined effects of the southern oscillation index and the pacific decadal oscillation on a stochastic daily precipitation model.,yes
-499,comparison of growth and stress in resident redband trout held in laboratory simulations of montane and desert summer temperature cycles.,yes
 500,"forest ecosystems, disturbance, and climatic change in washington state, usa.",yes
 501,"long-term snow, climate, and streamflow trends at the reynolds creek experimental watershed, owyhee mountains, idaho, united states.",yes
 502,current health issues and management strategies for white pines in the western united states and canada.,yes
@@ -322,9 +325,7 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 560,transient future climate over the western united states using a regional climate model,yes
 561,"long-duration drought variability and impacts on ecosystem services: a case study from glacier national park, montana",yes
 565,areal extent of seasonal snow cover in a changed climate.,yes
-568,the effect of climate change on floods in british columbia.,yes
 569,pacific northwest regional assessment: the impacts of climate variability and climate change on the water resources of the columbia river basin.,yes
-573,"growth response of ponderosa pine (pinus ponderosa) to climate in the eastern cascade mountains, washington, u.s.a.: implications for climatic change.",yes
 574,trends in temperature and precipitation in the pacific northwest during the twentieth century.,yes
 584,the metagovernance of climate change: institutional adaptation to the mountain pine beetle epidemic in british columbia.,yes
 588,"impact of climate change on north cascade alpine glaciers, and alpine runoff.",yes
@@ -396,7 +397,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 690,"hydro-meteorological drivers and sources of suspended sediment flux in the pro-glacial zone of the retreating castle creek glacier, cariboo mountains, british columbia, canada",yes
 690,"hydro-meteorological drivers and sources of suspended sediment flux in the pro-glacial zone of the retreating castle creek glacier, cariboo mountains, british columbia, canada.",yes
 691,projected major fire and vegetation changes in the pacific northwest of the conterminous united states under selected cmip5 climate futures.,yes
-692,"application of a hybrid forest growth model to evaluate climate change impacts on productivity, nutrient cycling and mortality in a montane forest ecosystem.",yes
 694,snow cover variability in a forest ecotone of the oregon cascades via modis terra products.,yes
 695,influence of winter season climate variability on snow-precipitation ratio in the western united states.,yes
 696,how will climate change affect wildland fire severity in the western us?,yes
@@ -412,7 +412,6 @@ toads, anaxyrus (=bufo) boreas, across present and future landscapes",no
 715,american kestrel reproduction in southwestern idaho: annual variation and long-term trends.,yes
 720,multitemporal snow cover mapping in mountainous terrain for landsat climate data record development.,yes
 721,imputing forest carbon stock estimates from inventory plots to a nationally continuous coverage.,yes
-722,why land planners and water managers don't talk to one another and why they should!,yes
 723,landscape-scale eco-evolutionary dynamics: selection by seed predators and fire determine a major reproductive strategy.,yes
 724,mountain pine beetles colonizing historical and naive host trees are associated with a bacterial community highly enriched in genes contributing to terpene metabolism.,yes
 725,hydrothermal assessment of temporal variability in seedbed microclimate.,yes

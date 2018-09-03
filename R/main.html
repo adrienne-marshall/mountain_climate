@@ -177,14 +177,58 @@ file.edit(&quot;top_authors.R&quot;)</code></pre>
 </div>
 <div id="analyze-findings-from-content-analysis." class="section level1">
 <h1>Analyze findings from content analysis.</h1>
+<div id="get-and-clean-our-coded-data" class="section level2">
+<h2>Get and clean our coded data:</h2>
 <p>First, get our data from google sheets. You’ll need to set up the <code>googlesheets</code> package to use this one effectively.</p>
-<pre class="r"><code>file.edit(&quot;get_from_google.R&quot;)</code></pre>
+<pre class="r"><code>source(&quot;get_from_google.R&quot;)
+
+# Rename columns in a sane way.
+# Also combines arbitrated data from rounds 1 and 2. 
+source(&quot;rename_columns.R&quot;)
+
+# Will also need to aggregate from multiple runs:
+# file.edit(&quot;combine_content_analyses.R&quot;)
+
+# For Round 1:-----------------
+# Check arbitration. 
+file.edit(&quot;check_arbitration.R&quot;)
+
+# For Round 2: ---------------
+# Check agreement (before arbitration): 
+file.edit(&quot;check_agreement2.R&quot;)
+
+# Check arbitration. ----------
+file.edit(&quot;check_arbitration_all.R&quot;)
+
+# Unite both rounds. ---------
+# Currently, some have different values (e.g., hucs)
+file.edit(&quot;unite_rounds.R&quot;)
+
+# Get summary statistics.
+file.edit(&quot;summary_stats.R&quot;)</code></pre>
 <p>We want to analyze across HUC6 units - so make a HUC6 layer:</p>
 <pre class="r"><code>file.edit(&quot;get_huc6.R&quot;)</code></pre>
+</div>
+<div id="analyze-and-visualize-the-coded-data" class="section level2">
+<h2>Analyze and visualize the coded data:</h2>
 <p>Look at some initial exploratory work:</p>
 <pre class="r"><code>file.edit(&quot;content_analysis.Rmd&quot;) # could move into old. </code></pre>
-<p>Figure 1: Number of papers over time</p>
+<p>Figure 2: Number of papers over time</p>
 <pre class="r"><code>file.edit(&quot;papers_over_time.R&quot;)</code></pre>
+<p>Figure x: Bar chart of spatial extents</p>
+<pre class="r"><code>file.edit(&quot;extents_bar_chart.R&quot;)</code></pre>
+<p>Figure x. Network map of topics; network map of disciplines.</p>
+<pre class="r"><code>file.edit(&quot;topic_network_map.R&quot;)
+file.edit(&quot;discipline_network_map.R&quot;)</code></pre>
+<p>Figure 8: HUC6 maps</p>
+<pre class="r"><code>file.edit(&quot;huc6_maps.R&quot;) # might be better to just use this to make data, and make a map in QGIS?
+file.edit(&quot;studies_per_huc.R&quot;)
+file.edit(&quot;huc6_heatmaps.R&quot;)</code></pre>
+<p>Potential figure: map points. This could potentially get laid over a HUC6 map? Not sure the best way to integrate.</p>
+<pre class="r"><code>file.edit(&quot;point_map.R&quot;)</code></pre>
+<p>Figure 9. Topics and disciplines covered by impacts, adaptation, and mitigation:</p>
+<pre class="r"><code>file.edit(&quot;IAM_topic_discipline.R&quot;)</code></pre>
+</div>
 </div>
 
 
