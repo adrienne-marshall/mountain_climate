@@ -1,4 +1,4 @@
-# The point of this file is to map summary statistics across HUC6 units. 
+# The point of this file is to map summary statistics for topic and discipline across HUC6 units. 
 
 library(tidyverse)
 library(tidytext)
