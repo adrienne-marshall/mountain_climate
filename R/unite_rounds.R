@@ -1,5 +1,8 @@
 # Unite both rounds of data collection. 
 library(tidyverse)
+library(tidytext)
+library(widyr)
+library(googlesheets)
 
 # Get all data.
 dat <- read_csv("../results/tabular/all_arbitrated_renamed.csv")
@@ -73,23 +76,61 @@ dat <- dat %>%
   dplyr::select(-data)
 
 # Discipline------------
-# Just make lower case. 
-dat <- dat %>% mutate(discipline = tolower(discipline))
+# Just make lower case - remove/join a few
+# Get rid of geography - replace.
+dat <- dat %>% 
+  mutate(discipline = tolower(discipline)) %>% 
+  mutate(discipline = case_when(paper_id %in% c("81", "163", "209", "466", "626", "651", "733", "797") ~ "ecology",
+                                paper_id == "181" ~ "ecology, hydrology",
+                                paper_id %in% c("193", "224", "471") ~ "hydrology",
+                                paper_id == "425" ~ "ecology, policy or management",
+                                paper_id == "439" ~ "meteorology and climatology",
+                                TRUE ~ discipline)) %>% 
+  mutate(discipline = str_replace(discipline, "biology|ecology", "biology/ecology")) 
 
 # Topics---------
-dat %>% 
+# dat %>% 
+#   mutate(topic = gsub("\\s*\\([^\\)]+\\)", "", topic)) %>% 
+#   unnest_tokens(topic, topic, token = str_split, pattern = ",") %>% 
+#   unnest_tokens(topic, topic, token = str_split, pattern = ";") %>%
+#   mutate(topic = str_trim(topic)) %>% 
+#   group_by(topic) %>% 
+#   count(sort = T) %>% 
+#   filter(topic != "") %>% 
+#   mutate(n = ceiling(n/2)) %>% 
+#   write_csv("../results/tabular/topics_used.csv")
+
+# Replace uncommon topics. 
+topic_df <- "https://docs.google.com/spreadsheets/d/19KaYfyF_iVavOqKDFHs08TPBodRPclueOXtFlJLu9q0/edit#gid=183943559" %>% 
+  gs_url() %>% 
+  gs_read()
+names(topic_df)[str_detect(names(topic_df), "CC arbitration")] <- "new_topic"
+# names(topic_df)[str_detect(names(topic_df), "Extreme Consolidation")] <- "consolidated_topic"
+names(topic_df)[str_detect(names(topic_df), "Topic coded")] <- "topic"
+
+topic_df <- topic_df %>% 
+  dplyr::select(topic, new_topic) %>% 
+  mutate(new_topic = ifelse(new_topic %in% c("carbon cycle", "carbon sequestration", 
+                                             "carbon stocks", "carbon emissions"), 
+                            "carbon cycle", new_topic)) %>% 
+  mutate(new_topic = ifelse(new_topic == "N/A", topic, new_topic))
+
+dat <- dat %>% 
   mutate(topic = gsub("\\s*\\([^\\)]+\\)", "", topic)) %>% 
   unnest_tokens(topic, topic, token = str_split, pattern = ",") %>% 
   unnest_tokens(topic, topic, token = str_split, pattern = ";") %>%
   mutate(topic = str_trim(topic)) %>% 
-  group_by(topic) %>% 
-  count(sort = T) %>% 
-  filter(topic != "") %>% 
-  mutate(n = ceiling(n/2)) %>% 
-  write_csv("../results/tabular/topics_used.csv")
+  left_join(topic_df) %>% 
+  mutate(topic = new_topic) %>% 
+  dplyr::select(-new_topic) %>% 
+  nest(topic) %>%
+  mutate(topic = purrr::map(data, unlist), 
+         topic = map_chr(topic, paste, collapse = ", ")) %>% 
+  dplyr::select(-data)
 
-# Still need to replace topics... 
-
+# Manual changes to topic: 
+# Paper # 67 shouldn't have "glaciers" in the topic. 
+dat$topic[dat$paper_id == "67"] <- str_replace(dat$topic[dat$paper_id == "67"], "glaciers, ", "")
 
 # Projected-----------
 # nothing to change. 
