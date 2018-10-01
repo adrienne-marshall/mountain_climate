@@ -1,0 +1,279 @@
+---
+title: "Topic and Discipline by HUC"
+author: "mountain climate research group"
+date: "7/12/2017"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Introduction
+
+This document has maps of how frequently each topic is studied in each HUC - for each, I've made two maps: on the left is the area-weighted number of papers on a given topic in each HUC, and on the right is the percentage of papers in a given HUC that are on that topic. More simply, the figures on the left control for the size of HUC, and the figures on the right control for the popularity of research in a given HUC. One caution in interpretation: especially for the figures on the right, I recommend paying attention to the legend - some of them have a pretty small range overall, so I'd be hesitant to overinterpret the spatial variability we see. The figures on the right may be more useful overall.
+
+The goal is to have all these maps in one place so that we can get a look at them, figure out what patterns we see in the data, and start to figure out which of these we might want to put in a manuscript. These could also be remade with more tightly-binned topics. 
+
+I've included the code in the doc so people can see how they're made, if you're interested (I printed it for topic, not discipline, since it's somewhat repetitive). And if not, just skip past the code! 
+
+# Main changes since last time: 
+
+1. I'm now only plotting the percent of papers in a HUC that address a given topic. 
+
+2. I subset to papers with less than 25,000 km^2^ extent. 
+
+3. I used the arbitrated topics (column F in the spreadsheet) and added the extremely consolidated topics (column G).
+
+
+# Get and organize data
+
+```{r packages}
+library(tidyverse) 
+library(tidytext) # organizing text data - including "unnest_tokens"
+library(sf) # spatial data manipulation
+library(ggthemes) # ggplot themes
+library(pals) # color palettes
+library(patchwork) # arrange multiple plots. 
+library(googlesheets) # get data from google sheets. 
+```
+
+```{r organize data}
+# Get data.
+# These topics are the ones Micah and Meghan recategorized and Courtney arbitrated. 
+dat <- read_csv("../results/tabular/all_dat_cleaned.csv")
+
+# Use only papers with a reasonably small spatial extent. 
+dat <- dat %>% 
+  filter(!extent %in% c("western us", "pacific northwest", "40000 km2 - PNW", "25000 - 40000 km2"))
+
+# Get HUC6 data. 
+huc6_raw <- st_read("../data/spatial/crb_huc6.shp")
+huc6_raw <- st_transform(huc6_raw, 3857)
+huc6 <- st_simplify(huc6_raw)
+
+# Change HUC6 projection to Albers. 
+huc6 <- st_transform(huc6, "+proj=aea +lat_1=43 +lat_2=48 +lat_0=34 +lon_0=-120 +x_0=600000 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs ")
+
+# Unnest topic. 
+topic_df <- dat %>% 
+  unnest_tokens(topic, topic, token = stringr::str_split, pattern = ", ") %>% 
+    filter(!topic %in% c("na", "other")) # don't know how that got in there.
+
+# Unnest HUC6 to count HUC6*topic. 
+huc6_topics <- topic_df %>%
+  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>% 
+  group_by(huc6, topic) %>%
+  count(sort = T) %>% 
+  ungroup() %>% 
+  filter(huc6 != "1002") # get rid of coastal oregon. 
+
+# Subset to reasonably common topics. 
+top_topics <- topic_df %>% 
+  group_by(topic) %>% 
+  count(sort = T) %>% 
+  filter(n >= 10)
+
+# Get HUC6 to match names in shapefile. 
+# For now, filter out Canadian watersheds. 
+huc6_topics <- huc6_topics %>% 
+  filter(!huc6 %in% c("columbia", "kooteney", "okanagan")) %>% 
+  mutate(huc6 = paste0("17", huc6)) %>% 
+  filter(topic %in% top_topics$topic) %>% 
+  rename("HUC6" = "huc6")
+
+# Join with shapefile. 
+ huc6_topics <- huc6_topics %>% 
+   full_join(expand.grid(HUC6 = unique(huc6_topics$HUC6),
+                         topic = unique(huc6_topics$topic))) 
+#   mutate(n = ifelse(is.na(n), 0, n))
+plot_dat <- left_join(huc6, huc6_topics, by = "HUC6") %>% 
+  mutate(n_area = 1000*n/AREASQKM) %>% 
+  filter(!is.na(topic))
+
+# Get proportional number of papers. 
+n_per_huc <- dat %>% 
+  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>%
+  group_by(huc6) %>% 
+  count() %>% 
+  ungroup() %>% 
+  rename(total_papers = n) %>% 
+  mutate(huc6 = paste0("17", huc6))
+
+plot_dat <- left_join(plot_dat, n_per_huc,
+                      by = c("HUC6" = "huc6")) %>% 
+  mutate(percent_of_papers = 100*n/total_papers)
+
+```
+
+Papers are subset to those with extents less than 25,000 km2, which gives us `r nrow(dat)` papers. 
+
+# Make plots: Topics
+
+```{r make plots}
+topics <- unique(huc6_topics$topic)
+for(i in 1:length(topics)){
+    p <- ggplot(plot_dat %>% filter(topic == topics[i])) + 
+     geom_sf(aes(fill = percent_of_papers), size = 0.1) + 
+    scale_fill_gradientn(colors = pals::ocean.matter(100)[100:1],
+                         na.value = "white") + 
+    # theme_map() + 
+    theme(legend.position = "bottom") + 
+    labs(fill = "% of \npapers",
+         title = topics[i]) 
+    
+    print(p)
+}
+
+```
+
+# Make plots: Extreme consolidation of topics
+
+```{r topic extreme consolidation, echo = F}
+# Get extremely consolidated topics. 
+topic_df2 <- "https://docs.google.com/spreadsheets/d/19KaYfyF_iVavOqKDFHs08TPBodRPclueOXtFlJLu9q0/edit#gid=183943559" %>% 
+  gs_url() %>% 
+  gs_read()
+
+names(topic_df2)[str_detect(names(topic_df2), "Extreme Consolidation")] <- "consolidated_topic"
+names(topic_df2)[str_detect(names(topic_df2), "Topic coded")] <- "topic"
+
+# Use extremely consolidated topics. 
+dat2 <- dat %>% 
+  mutate(topic = gsub("\\s*\\([^\\)]+\\)", "", topic)) %>% 
+  unnest_tokens(topic, topic, token = str_split, pattern = ",") %>% 
+  unnest_tokens(topic, topic, token = str_split, pattern = ";") %>%
+  mutate(topic = str_trim(topic)) %>% 
+  left_join(topic_df2 %>% 
+              dplyr::select(topic, consolidated_topic)) %>% 
+  filter(!consolidated_topic %in% c("other", NA)) %>%
+  distinct(paper_id, consolidated_topic, .keep_all = T) %>% 
+  mutate(topic = consolidated_topic) %>%
+  dplyr::select(-consolidated_topic) 
+
+# Unnest HUC6 to count HUC6*topic. 
+huc6_topics <- dat2 %>%
+  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>% 
+  group_by(huc6, topic) %>%
+  count(sort = T) %>% 
+  ungroup() %>% 
+  filter(huc6 != "1002") # get rid of coastal oregon. 
+
+# Get HUC6 to match names in shapefile. 
+# For now, filter out Canadian watersheds. 
+huc6_topics <- huc6_topics %>% 
+  filter(!huc6 %in% c("columbia", "kooteney", "okanagan")) %>% 
+  mutate(huc6 = paste0("17", huc6)) %>% 
+  rename("HUC6" = "huc6") 
+
+# Join with shapefile. 
+huc6_topics <- huc6_topics %>%
+  full_join(expand.grid(HUC6 = unique(huc6_topics$HUC6),
+                        topic = unique(huc6_topics$topic))) 
+plot_dat <- left_join(huc6, huc6_topics, by = "HUC6") %>% 
+  mutate(n_area = 1000*n/AREASQKM) %>% 
+  filter(!is.na(topic))
+
+# Get proportional number of papers. 
+n_per_huc <- dat %>% 
+  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>%
+  group_by(huc6) %>% 
+  count() %>% 
+  ungroup() %>% 
+  rename(total_papers = n) %>% 
+  mutate(huc6 = paste0("17", huc6))
+
+plot_dat <- left_join(plot_dat, n_per_huc,
+                      by = c("HUC6" = "huc6")) %>% 
+  mutate(percent_of_papers = 100*n/total_papers)
+
+topics <- unique(huc6_topics$topic)
+for(i in 1:length(topics)){
+    p <- ggplot(plot_dat %>% filter(topic == topics[i])) + 
+     geom_sf(aes(fill = percent_of_papers), size = 0.1) + 
+    scale_fill_gradientn(colors = pals::ocean.matter(100)[100:1],
+                         na.value = "white") + 
+    theme_map() + 
+    theme(legend.position = "bottom") + 
+    labs(fill = "% of \npapers",
+         title = topics[i]) 
+    
+    print(p)
+}
+
+```
+
+# Make plots: Disciplines
+
+```{r disciplines, echo = F}
+# Unnest discipline. 
+discipline_df <- dat %>%
+  unnest_tokens(discipline, discipline, token = stringr::str_split, pattern = ", ")
+
+# Unnest HUC6 to count HUC6*discipline. 
+huc6_disciplines <- discipline_df %>%
+  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>% 
+  group_by(huc6, discipline) %>%
+  count(sort = T) %>% 
+  ungroup() %>% 
+  filter(discipline != "na") %>% # don't know how that got in there. 
+  filter(huc6 != "1002") # get rid of coastal oregon. 
+
+# Subset to reasonably common disciplines. 
+top_disciplines <- discipline_df %>% 
+  group_by(discipline) %>% 
+  count(sort = T) %>%
+  filter(n > 2) %>% 
+  filter(!discipline %in% c("geography", "biogeography", "ecology"))
+  
+# Get HUC6 to match names in shapefile. 
+# For now, filter out Canadian watersheds. 
+huc6_disciplines <- huc6_disciplines %>% 
+  filter(!huc6 %in% c("columbia", "kooteney", "okanagan")) %>% 
+  mutate(huc6 = paste0("17", huc6)) %>% 
+  filter(discipline %in% top_disciplines$discipline)
+
+# Join with shapefile. 
+huc6_disciplines <- rename(huc6_disciplines, "HUC6" = "huc6")
+huc6_disciplines <- huc6_disciplines %>%
+  full_join(expand.grid(HUC6 = unique(huc6_disciplines$HUC6),
+                        discipline = unique(huc6_disciplines$discipline))) 
+
+plot_dat <- left_join(huc6, huc6_disciplines, by = "HUC6") %>% 
+  mutate(n_area = 1000*n/AREASQKM) %>% 
+  filter(!is.na(discipline))
+
+# Get proportional number of papers. 
+n_per_huc <- dat %>% 
+  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>%
+  group_by(huc6) %>% 
+  count() %>% 
+  ungroup() %>% 
+  rename(total_papers = n) %>% 
+  mutate(huc6 = paste0("17", huc6))
+
+plot_dat <- left_join(plot_dat, n_per_huc,
+                      by = c("HUC6" = "huc6")) %>% 
+  mutate(percent_of_papers = 100*n/total_papers)
+
+disciplines <- unique(huc6_disciplines$discipline)
+for(i in 1:length(disciplines)){
+    p <- ggplot(plot_dat %>% filter(discipline == disciplines[i])) + 
+     geom_sf(aes(fill = percent_of_papers), size = 0.1) + 
+    scale_fill_gradientn(colors = pals::ocean.matter(100)[100:1],
+                         na.value = "white") + 
+    theme_map() + 
+    theme(legend.position = "bottom") + 
+    labs(fill = "% of \npapers",
+         title = disciplines[i])
+
+    print(p)
+}
+
+```
+

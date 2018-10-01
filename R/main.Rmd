@@ -122,11 +122,6 @@ file.edit("get_huc6.R")
 
 ## Analyze and visualize the coded data: 
 
-Look at some initial exploratory work: 
-
-```{r initial exploratory}
-file.edit("content_analysis.Rmd") # could move into old. 
-```
 
 Figure 2: Number of papers over time
 ```{r papers over time}
@@ -144,11 +139,19 @@ file.edit("topic_network_map.R")
 file.edit("discipline_network_map.R")
 ```
 
+Figure x. Topic interactions over time. 
+```{r topics interactions over time}
+file.edit("topic_interactions_time.R")
+```
+
+
 Figure 8: HUC6 maps
 ```{r huc6_maps}
-file.edit("huc6_maps.R") # might be better to just use this to make data, and make a map in QGIS?
-file.edit("studies_per_huc.R")
+file.edit("studies_per_huc.R") # total number of studies per HUC. 
+file.edit("huc6_maps.R") # maps by topic, discipline, and HUC.
 file.edit("huc6_heatmaps.R")
+
+file.edit("huc6_topic_discipline.Rmd")
 ```
 
 Potential figure: map points. 
