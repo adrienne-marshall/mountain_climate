@@ -31,7 +31,7 @@ dat <- dat %>%
                             str_detect(extent, "100 km2 - 1,500 km2") ~ "100 - 1500 km2",
                             str_detect(extent, "100 km2 - 500 km2") ~ "100 - 1500 km2",
                             str_detect(extent, "500 km2 - 1500 km2") ~ "100 - 1500 km2",
-                            str_detect(extent, "1,500 km2 - 25,000 km2") ~ "1500 - 2500 km2",
+                            str_detect(extent, "1,500 km2 - 25,000 km2") ~ "1500 - 25000 km2",
                             str_detect(extent, "1500 km2 - 25000 km2") ~ "1500 - 25000 km2",
                             str_detect(extent, "25,000 km2 - 40,000") ~ "25000 - 40000 km2",
                             str_detect(extent, "larger than 40") ~ "40000 km2 - PNW", # order is important here. 
@@ -132,11 +132,10 @@ dat <- dat %>%
 # Paper # 67 shouldn't have "glaciers" in the topic. 
 dat$topic[dat$paper_id == "67"] <- str_replace(dat$topic[dat$paper_id == "67"], "glaciers, ", "")
 
-# Projected-----------
-# nothing to change. 
-
-# Observed------------
-# nothing to change. 
+# Projected and observed -----------
+# Manual fix: 
+dat$observed[dat$paper_id == "266"] <- "no"
+dat$projected[dat$paper_id == "266"] <- "yes"
 
 # New data------------
 # nothing to change.
@@ -145,3 +144,10 @@ dat$topic[dat$paper_id == "67"] <- str_replace(dat$topic[dat$paper_id == "67"], 
 dat <- dat %>% group_by(paper_id) %>% slice(1) %>% ungroup()
 
 write_csv(dat, "../results/tabular/all_dat_cleaned.csv")
+
+# Write to googlesheets. 
+# gs_dat <- gs_new(title = "clean_data", 
+#                  input = dat)
+# 
+
+
