@@ -7,9 +7,13 @@ library(ggthemes)
 library(pals)
 library(cowplot)
 
-
-# Get data - should ultimately be combination of first and second round. 
+# Get data.
+# These topics are the ones Micah and Meghan recategorized and Courtney arbitrated. 
 dat <- read_csv("../results/tabular/all_dat_cleaned.csv")
+
+# Use only papers with a reasonably small spatial extent. 
+dat <- dat %>% 
+  filter(!extent %in% c("western us", "pacific northwest", "40000 km2 - PNW", "25000 - 40000 km2"))
 
 # Get HUC6 data. 
 huc6_raw <- st_read("../data/spatial/crb_huc6.shp")
@@ -21,85 +25,81 @@ huc6 <- st_transform(huc6, "+proj=aea +lat_1=43 +lat_2=48 +lat_0=34 +lon_0=-120 
 
 # Unnest topic. 
 topic_df <- dat %>% 
-  unnest_tokens(topic, topic, token = stringr::str_split, pattern = ", ") 
-
-# Get top n topics to plot.
-n_topics <- 6
-top_topics <- topic_df %>%
-  group_by(topic) %>%
-  count(sort = T) %>%
-  ungroup() %>%
-  top_n(n_topics)
+  unnest_tokens(topic, topic, token = stringr::str_split, pattern = ", ") %>% 
+  filter(!topic %in% c("na", "other")) # don't know how that got in there.
 
 # Unnest HUC6 to count HUC6*topic. 
-topic_df <- topic_df %>%
-  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>%
-  filter(topic %in% top_topics$topic) %>%
+huc6_topics <- topic_df %>%
+  unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>% 
   group_by(huc6, topic) %>%
-  count()
+  count(sort = T) %>% 
+  ungroup() %>% 
+  filter(huc6 != "1002") # get rid of coastal oregon. 
 
-huc6_topics <- expand.grid(topic = unique(top_topics$topic),
-                           huc6 = unique(topic_df$huc6))
-huc6_topics <- left_join(huc6_topics, topic_df)
-huc6_topics$n[is.na(huc6_topics$n)] <- 0
+# Subset to reasonably common topics. 
+top_topics <- topic_df %>% 
+  group_by(topic) %>% 
+  count(sort = T) %>% 
+  filter(n >= 10)
 
 # Get HUC6 to match names in shapefile. 
-huc6_topics <- huc6_topics %>%
-  mutate(huc6_id = str_sub(huc6, 1, 4)) 
-huc6_topics$huc6_id[grep("[[:digit:]]", huc6_topics$huc6_id)] <- paste0(17, huc6_topics$huc6_id[grep("[[:digit:]]", huc6_topics$huc6_id)])
+# For now, filter out Canadian watersheds. 
+huc6_topics <- huc6_topics %>% 
+  filter(!huc6 %in% c("columbia", "kooteney", "okanagan")) %>% 
+  mutate(huc6 = paste0("17", huc6)) %>% 
+  filter(topic %in% top_topics$topic) %>% 
+  rename("HUC6" = "huc6")
 
 # Join with shapefile. 
-huc6_topics <- rename(huc6_topics, "HUC6" = "huc6_id")
+huc6_topics <- huc6_topics %>% 
+  full_join(expand.grid(HUC6 = unique(huc6_topics$HUC6),
+                        topic = unique(huc6_topics$topic))) 
+#   mutate(n = ifelse(is.na(n), 0, n))
 plot_dat <- left_join(huc6, huc6_topics, by = "HUC6") %>% 
+  mutate(n_area = 1000*n/AREASQKM) %>% 
   filter(!is.na(topic))
 
-# Make a plot. 
-p1 <- ggplot(plot_dat) + 
-  geom_sf(aes(fill = n), size = 0.1) + 
-  scale_fill_gradientn(colors = pals::ocean.haline(100)[100:1]) + 
-  facet_wrap(~topic) + 
-  theme_few() + 
-  theme(axis.text = element_text(size = 7)) +
-  labs(fill = "Number \nof \npapers")
-# p1
-
-pdf("../results/figures/topic_huc.pdf",
-    width = 9, height = 6)
-p1
-dev.off()
-
-# Make a proportional version. 
+# Get proportional number of papers. 
 n_per_huc <- dat %>% 
   unnest_tokens(huc6, huc6, token = stringr::str_split, pattern = ", ") %>%
   group_by(huc6) %>% 
   count() %>% 
-  rename(total_papers = n)
+  ungroup() %>% 
+  rename(total_papers = n) %>% 
+  mutate(huc6 = paste0("17", huc6))
 
-plot_dat2 <- plot_dat %>% 
-  left_join(n_per_huc, by = "huc6") %>% 
-  mutate(n_percent = 100*n/total_papers)
+plot_dat <- left_join(plot_dat, n_per_huc,
+                      by = c("HUC6" = "huc6")) %>% 
+  mutate(percent_of_papers = 100*n/total_papers)
 
-tops <- unique(plot_dat2$topic)
-plots <- vector("list", length(tops))
-
-for(i in 1:length(plots)){
-  plots[[i]] <- ggplot(plot_dat2 %>% 
-                         filter(topic == tops[i])) + 
-    geom_sf(aes(fill = n_percent), size = 0.1) + 
-    scale_fill_gradientn(colors = pals::ocean.haline(100)[100:1]) + 
-    facet_wrap(~topic) + 
+# Plot topics of interest. 
+topics <- c("snow", "glaciers", "timber production/silviculture", "salmon/anadromous fish",
+            "carbon cycle", "management", "wildfire", "water quantity")
+plots <- vector("list", length(topics))
+for(i in 1:length(topics)){
+  plots[[i]] <- ggplot(plot_dat %>% filter(topic == topics[i])) + 
+    geom_sf(aes(fill = percent_of_papers), size = 0.1) + 
+    scale_fill_gradientn(colors = pals::ocean.matter(100)[100:1],
+                         na.value = "white") + 
     theme_map() + 
-    theme(axis.text = element_text(size = 7),
-          legend.key.size = unit(0.7, "line"),
-          legend.text = element_text(size = 8)) +
-    labs(fill = "")
+    theme(legend.position = "bottom",
+          panel.grid = element_line(color = "grey80"),
+          legend.title = element_blank()) + 
+    labs(# fill = "% of \npapers",
+         title = topics[i]) 
+
 }
 
-p1a <- plot_grid(plotlist = plots, nrow = 2, ncol = 3)
-pdf("../results/figures/topic_huc_proportional.pdf",
-    width = 9, height = 6)
-p1a
+p <- plot_grid(plotlist = plots, 
+               nrow = 2, ncol = 4)
+
+pdf("../results/figures/topics_hucs.pdf",
+    width = 12, height = 8)
+p
 dev.off()
+
+
+
 
 # Repeat for disciplines. ------------
 discipline_df <- dat %>% 

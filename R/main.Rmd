@@ -1,7 +1,7 @@
 ---
 title: 'Mountain climate review: guide to scripts'
 author: "Adrienne Marshall"
-date: "4/13/2018"
+date: "10/18/2018"
 output: html_document
 ---
 
@@ -122,21 +122,30 @@ file.edit("get_huc6.R")
 
 ## Analyze and visualize the coded data: 
 
-
 Figure 2: Number of papers over time
 ```{r papers over time}
 file.edit("papers_over_time.R")
 ```
 
-Figure x: Bar chart of spatial extents
-```{r spatial extents bar chart}
-file.edit("extents_bar_chart.R")
+Figure 3. Simple characterization of paper topics, disciplines, and IAM (impacts/adaptation/mitigation).
+```{r content bar charts}
+file.edit("topical_bar_charts.R")
+```
+
+
+Figure 4. Topics and disciplines covered by impacts, adaptation, and mitigation: 
+```{r IAM*topic}
+file.edit("IAM_topic_discipline.R") # makes both a bar chart and radar. Set discipline vs topic at top. 
+file.edit("topic_discipline_radar.R")
 ```
 
 Figure x. Network map of topics; network map of disciplines. 
 ```{r topic network map}
 file.edit("topic_network_map.R")
 file.edit("discipline_network_map.R")
+
+# Make network heatmaps of topics, subset by discipline:
+file.edit("discipline_topic_heatmaps.R")
 ```
 
 Figure x. Topic interactions over time. 
@@ -154,14 +163,18 @@ file.edit("huc6_heatmaps.R")
 file.edit("huc6_topic_discipline.Rmd")
 ```
 
+
+Figure x: Simple characterization of spatially-relevant factors: biome and extent.
+HUC-6 is not included because it is mapped in separate figures. 
+```{r spatial extents bar chart}
+file.edit("spatial_bar_charts.R")
+```
+
 Potential figure: map points. 
 This could potentially get laid over a HUC6 map? Not sure the best way to integrate. 
 ```{r point map}
 file.edit("point_map.R")
 ```
 
-Figure 9. Topics and disciplines covered by impacts, adaptation, and mitigation: 
-```{r IAM*topic}
-file.edit("IAM_topic_discipline.R")
-```
+
 

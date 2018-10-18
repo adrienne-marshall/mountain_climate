@@ -18,7 +18,7 @@ topic_df <- dat %>%
   unnest_tokens(input = topic, output = topic, token = stringr::str_split, pattern = ",") %>%
   mutate(topic = str_trim(topic)) %>%
   filter(!is.na(topic)) %>% 
-  filter(! topic %in% c("pdo)", "na"))
+  filter(!topic %in% c("pdo)", "na"))
 
 # Subset to top topics.
 top_topics <- topic_df %>%

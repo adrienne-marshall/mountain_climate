@@ -86,7 +86,18 @@ dat <- dat %>%
                                 paper_id == "425" ~ "ecology, policy or management",
                                 paper_id == "439" ~ "meteorology and climatology",
                                 TRUE ~ discipline)) %>% 
-  mutate(discipline = str_replace(discipline, "biology|ecology", "biology/ecology")) 
+  unnest_tokens(discipline, discipline, token = stringr::str_split, pattern = ", ") %>% 
+  mutate(discipline = str_replace(discipline, "pedology|geology", "geology/pedology")) %>%
+  mutate(discipline = str_replace(discipline, "biology|ecology", "biology/ecology")) %>%
+  mutate(discipline = case_when(discipline %in% c("biogeoscience", "biogeochemistry") ~ "biology/ecology",
+                                discipline == "management" ~ "policy or management",
+                                discipline == "law" ~ "policy or management",
+                                discipline == "glaciology" ~ "hydrology",
+                                TRUE ~ discipline)) %>% 
+  nest(discipline) %>%
+  mutate(discipline = purrr::map(data, unlist), 
+         discipline = map_chr(discipline, paste, collapse = ", ")) %>% 
+  dplyr::select(-data)
 
 # Topics---------
 # dat %>% 
@@ -131,6 +142,7 @@ dat <- dat %>%
 # Manual changes to topic: 
 # Paper # 67 shouldn't have "glaciers" in the topic. 
 dat$topic[dat$paper_id == "67"] <- str_replace(dat$topic[dat$paper_id == "67"], "glaciers, ", "")
+dat$topic <- str_replace(dat$topic, "land use/ land cover", "land use/land cover")
 
 # Projected and observed -----------
 # Manual fix: 
