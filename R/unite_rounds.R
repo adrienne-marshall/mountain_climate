@@ -18,10 +18,10 @@ dat <- dat %>%
 dat <- dat %>% filter(inclusion_IAM %in% c("impacts", "adaptation", "mitigation"))
 
 # Extent--------
-dat <- dat %>% mutate(extent = tolower(extent))
 
 # Make changes semi-manually.
 dat <- dat %>% 
+  mutate(extent = tolower(extent)) %>% 
   mutate(extent = case_when(str_detect(extent, "point or plot") ~ "point",
                             str_detect(extent, "1-900") ~ "point",
                             str_detect(extent, "1-100 km2") ~ "1 - 100 km2",
@@ -38,8 +38,11 @@ dat <- dat %>%
                             str_detect(extent, "pacific northwest") ~ "pacific northwest",
                             str_detect(extent, "western us") ~ "western us",
                             str_detect(extent, "continental") ~ "western us",
-                            TRUE ~ extent)) 
+                            TRUE ~ extent)) %>% 
+  mutate(extent = str_replace(extent, "pnw", "PNW")) 
 
+# Fix those that need it. 
+dat$extent[dat$paper_id == "209"] <- "western us"
 
 # Location-----------
 # No good way to do this automatically. 

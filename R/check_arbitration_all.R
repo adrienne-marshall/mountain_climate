@@ -34,11 +34,11 @@ impacts_errors <- dat %>%
 dat %>%
   filter(inclusion_IAM == "impacts") %>%
   filter(paper_id %in% impacts_errors$paper_id) %>% 
-  dplyr::select(title, paper_id, impacts) #%>% View() # No errors. 
+  dplyr::select(title, paper_id, inclusion_IAM) #%>% View() # No errors. 
 
 # Check agreement on spatial extent. ---------------
 # First, extract to new extents. 
-# Gaaagh, the new extents have a mismatch with the old ones. 
+
 
 pat_rep <- tribble(
   ~patterns, ~replacements,
@@ -51,16 +51,33 @@ pat_rep <- tribble(
   "100 km2 - 500 km2", "100 - 10,000 km2"
 )
 
-
 extent_errors <- dat %>%
   distinct(extent, paper_id) %>%
+  mutate(extent = tolower(extent)) %>% 
   group_by(paper_id) %>%
   count() %>%
   filter(n > 1)
 
 dat %>%
   filter(paper_id %in% extent_errors$paper_id) %>%
-  dplyr::select(title, paper_id, extent) %>% View()
+  dplyr::select(title, paper_id, extent) %>% 
+  arrange(as.numeric(paper_id))
+  # write_csv("../results/disagreement_data/extent2.csv")
+
+# Check agreement on location.------------
+location_errors <- dat %>% 
+  filter(str_detect(location, "[[:digit:]]")) %>% 
+  distinct(location, paper_id) %>% 
+  group_by(paper_id) %>% 
+  count() %>% 
+  filter(n > 1)
+
+dat %>% 
+  filter(paper_id %in% location_errors$paper_id) %>%
+  filter(str_detect(location, "[[:digit:]]")) %>% 
+  dplyr::select(title, paper_id, location) %>% 
+  arrange(as.numeric(paper_id)) %>% 
+  write_csv("../results/disagreement_data/location2.csv")
 
 # Check HUC6 ----------------
 huc6_errors <- dat %>% 

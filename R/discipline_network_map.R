@@ -9,7 +9,7 @@ library(igraph)
 library(widyr)
 library(cowplot)
 
-# Get data - should ultimately be combination of first and second round. 
+# Get data. 
 dat <- read_csv("../results/tabular/all_dat_cleaned.csv")
 
 # Get disciplines.
