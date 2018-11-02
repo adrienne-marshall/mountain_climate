@@ -45,7 +45,23 @@ dat <- dat %>%
 dat$extent[dat$paper_id == "209"] <- "western us"
 
 # Location-----------
-# No good way to do this automatically. 
+
+# Get Courtney's locations:
+loc <- read_csv("../results/tabular/location2_CC.csv") %>% 
+  distinct(paper_id, location) %>% 
+  rename(cc_location = location) %>% 
+  mutate(paper_id = as.character(paper_id))
+
+# Replace data locations with Courtney's. 
+dat <- left_join(dat, loc, by = "paper_id") %>% 
+  mutate(location = ifelse(!is.na(cc_location), cc_location, location)) %>% 
+  dplyr::select(-cc_location)
+
+# Fix a few specific problens.
+dat$location[dat$paper_id == "692"] <- "50.6666,-120.333"
+dat$location[dat$paper_id == "307"] <- "47.2447,-121.0666"
+dat$location[dat$paper_id == "657"] <- "43.2058067,-113.5001702"
+
 
 # Biome-----------
 dat <- dat %>% mutate(biome = tolower(biome))
@@ -91,8 +107,8 @@ dat <- dat %>%
                                 TRUE ~ discipline)) %>% 
   unnest_tokens(discipline, discipline, token = stringr::str_split, pattern = ", ") %>% 
   mutate(discipline = str_replace(discipline, "pedology|geology", "geology/pedology")) %>%
-  mutate(discipline = str_replace(discipline, "biology|ecology", "biology/ecology")) %>%
-  mutate(discipline = case_when(discipline %in% c("biogeoscience", "biogeochemistry") ~ "biology/ecology",
+  # mutate(discipline = str_replace(discipline, "biology|ecology", "biology/ecology")) %>%
+  mutate(discipline = case_when(discipline %in% c("biogeoscience", "biogeochemistry") ~ "ecology",
                                 discipline == "management" ~ "policy or management",
                                 discipline == "law" ~ "policy or management",
                                 discipline == "glaciology" ~ "hydrology",
@@ -155,6 +171,9 @@ dat$projected[dat$paper_id == "266"] <- "yes"
 # New data------------
 # nothing to change.
 
+# Write a version with two copies of everything. 
+write_csv(dat, "../results/tabular/clean_data_two_copies.csv")
+
 # Make just one version of each paper.
 dat <- dat %>% group_by(paper_id) %>% slice(1) %>% ungroup()
 
@@ -164,5 +183,7 @@ write_csv(dat, "../results/tabular/all_dat_cleaned.csv")
 # gs_dat <- gs_new(title = "clean_data", 
 #                  input = dat)
 # 
+
+
 
 

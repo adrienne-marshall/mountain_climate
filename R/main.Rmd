@@ -52,9 +52,7 @@ file.edit("kappa_stats.R")
 ```
 
 
-
 ## Assign reviewers for the content analysis stage. 
-
 
 ```{r assign reviewers for content}
 # First third: 
@@ -112,6 +110,10 @@ file.edit("unite_rounds.R")
 
 # Get summary statistics.
 file.edit("summary_stats.R")
+
+# Get abstracts for our final corpus. 
+file.edit("get_abstracts.R")
+
 ```
 
 We want to analyze across HUC6 units - so make a HUC6 layer: 
@@ -138,6 +140,12 @@ Figure 4. Topics and disciplines covered by impacts, adaptation, and mitigation:
 file.edit("IAM_topic_discipline.R") # makes both a bar chart and radar. Set discipline vs topic at top. 
 file.edit("topic_discipline_radar.R")
 ```
+
+Figure x. Topics and disciplines subset by extent? 
+```{r extent*topic}
+file.edit("extent_topic_discipline.R")
+```
+
 
 Figure x. Network map of topics; network map of disciplines. 
 ```{r topic network map}
