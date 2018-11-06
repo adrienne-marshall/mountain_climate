@@ -1,5 +1,5 @@
 # This script maps relationships between disciplines. 
-# We should go through disciplines and consider binning those that are user-input.
+
 
 library(tidyverse)
 library(tidytext)
@@ -23,7 +23,7 @@ discipline_df <- dat %>%
 top_disciplines <- discipline_df %>%
   group_by(discipline) %>%
   count(sort = T) %>%
-  filter(n > 1) # should bin a little further. 
+  filter(n > 0) # should bin a little further. 
 
 # Get pairs - subset by top disciplines.
 discipline_pairs <- discipline_df %>%
@@ -34,16 +34,16 @@ discipline_pairs <- discipline_df %>%
 set.seed(1234)
 p1 <- discipline_pairs %>%
   graph_from_data_frame() %>%
-  ggraph(layout = "kk") +
+  ggraph(layout = "fr") +
   geom_edge_link(aes(edge_alpha = n, edge_width = n), 
                  edge_colour = "turquoise4", lineend = "round") +
   #geom_edge_density(aes(fill = n)) + 
   # geom_node_point(size = 3) +
-  geom_node_text(aes(label = name), repel = FALSE,
+  geom_node_label(aes(label = name), repel = F,
                  # point.padding = unit(0.1, "lines"),
                  size = 4) +
-  theme_void() + 
-  theme(plot.margin = margin(0.2, 0.2, 0.2, 0.2, "inches"))
+  theme_void() 
+p1
 
 pdf("../results/figures/discipline_network_graph.pdf", 
     width = 8, height = 6)

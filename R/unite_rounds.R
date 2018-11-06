@@ -57,7 +57,7 @@ dat <- left_join(dat, loc, by = "paper_id") %>%
   mutate(location = ifelse(!is.na(cc_location), cc_location, location)) %>% 
   dplyr::select(-cc_location)
 
-# Fix a few specific problens.
+# Fix a few specific problems.
 dat$location[dat$paper_id == "692"] <- "50.6666,-120.333"
 dat$location[dat$paper_id == "307"] <- "47.2447,-121.0666"
 dat$location[dat$paper_id == "657"] <- "43.2058067,-113.5001702"
@@ -68,6 +68,19 @@ dat <- dat %>% mutate(biome = tolower(biome))
 dat <- dat %>% 
   mutate(biome = case_when(is.na(biome) ~ "n/a (not biome specific or all biomes - see codebook)",
                            TRUE ~ biome))
+
+dat <- dat %>% 
+  unnest_tokens(biome, biome, token = str_split, pattern = ", ") %>% 
+  mutate(biome = case_when(biome == "alpine/tundra" ~ "alpine tundra",
+                           str_detect(biome, "boreal") ~ "forest: temperate",
+                           str_detect(biome, "n/a") ~ "N/A",
+                           TRUE ~ biome)) %>% 
+  # distinct(paper_id, biome, .keep_all = T) %>% 
+  nest(biome) %>% 
+  mutate(biome = purrr::map(data, unlist)) %>% 
+  mutate(biome = map_chr(biome, paste, collapse = ", ")) %>% 
+  dplyr::select(-data)
+
 
 # Huc6------------
 # Make all numeric. 
@@ -111,7 +124,7 @@ dat <- dat %>%
   mutate(discipline = case_when(discipline %in% c("biogeoscience", "biogeochemistry") ~ "ecology",
                                 discipline == "management" ~ "policy or management",
                                 discipline == "law" ~ "policy or management",
-                                discipline == "glaciology" ~ "hydrology",
+                                # discipline == "glaciology" ~ "hydrology",
                                 TRUE ~ discipline)) %>% 
   nest(discipline) %>%
   mutate(discipline = purrr::map(data, unlist), 
@@ -130,6 +143,17 @@ dat <- dat %>%
 #   mutate(n = ceiling(n/2)) %>% 
 #   write_csv("../results/tabular/topics_used.csv")
 
+# Get papers that have river geomorphology and restoration as a topic. 
+rest <- dat %>% 
+  filter(str_detect(topic, "geomorphology and restoration")) %>% 
+  dplyr::select(title, paper_id, topic) %>% 
+  distinct(paper_id, .keep_all = T) 
+rest <- rest %>% 
+  mutate(reviewer = rep(c("AM", "MF", "PE"), each = ceiling(nrow(rest)/3))[1:nrow(rest)])
+write_csv(rest, "../results/disagreement_data/restoration_papers.csv")
+
+
+
 # Replace uncommon topics. 
 topic_df <- "https://docs.google.com/spreadsheets/d/19KaYfyF_iVavOqKDFHs08TPBodRPclueOXtFlJLu9q0/edit#gid=183943559" %>% 
   gs_url() %>% 
@@ -142,8 +166,12 @@ topic_df <- topic_df %>%
   dplyr::select(topic, new_topic) %>% 
   mutate(new_topic = ifelse(new_topic %in% c("carbon cycle", "carbon sequestration", 
                                              "carbon stocks", "carbon emissions"), 
-                            "carbon cycle", new_topic)) %>% 
-  mutate(new_topic = ifelse(new_topic == "N/A", topic, new_topic))
+                            "carbon cycle", new_topic))
+
+# Save final topics. 
+# binned_topics <- gs_new(title = "final_binned_topics", input = topic_df)
+
+write_csv(topic_df, "../results/tabular/final_topic_binning.csv")
 
 dat <- dat %>% 
   mutate(topic = gsub("\\s*\\([^\\)]+\\)", "", topic)) %>% 
@@ -152,6 +180,7 @@ dat <- dat %>%
   mutate(topic = str_trim(topic)) %>% 
   left_join(topic_df) %>% 
   mutate(topic = new_topic) %>% 
+  filter(topic != "N/A") %>% 
   dplyr::select(-new_topic) %>% 
   nest(topic) %>%
   mutate(topic = purrr::map(data, unlist), 
@@ -179,10 +208,20 @@ dat <- dat %>% group_by(paper_id) %>% slice(1) %>% ungroup()
 
 write_csv(dat, "../results/tabular/all_dat_cleaned.csv")
 
-# Write to googlesheets. 
-# gs_dat <- gs_new(title = "clean_data", 
-#                  input = dat)
+# Write to googlesheets.---------
+# gs_dat <- gs_ls()
 # 
+# # If the sheet is already written: 
+# if(sum(str_detect(gs_dat$sheet_title, "all_dat_cleaned")) > 0){
+#   gs_key1 <- gs_key(gs_dat$sheet_key[gs_dat$sheet_title == "all_dat_cleaned"])
+#   gs_edit_cells(ss = gs_key1, input = dat, anchor = "A1")
+#   
+# } else { # If not already written. 
+#   gs_dat <- gs_new(title = "all_dat_cleaned", 
+#                    input = dat)
+# }
+
+
 
 
 

@@ -28,13 +28,14 @@ top_topics <- topic_df %>%
 # Get pairs - subset by top topics.
 topic_pairs <- topic_df %>%
   filter(topic %in% top_topics$topic) %>%
-  pairwise_count(topic, paper_id, sort = TRUE, upper = TRUE)
+  filter(topic != "other") %>% 
+  pairwise_count(topic, paper_id, sort = TRUE, upper = FALSE)
 
 # Make a network map. 
 set.seed(1234)
 p1 <- topic_pairs %>%
   graph_from_data_frame() %>%
-  ggraph(layout = "kk") +
+  ggraph(layout = "fr") +
   geom_edge_link(aes(edge_alpha = n, edge_width = n), 
                  edge_colour = "salmon") +
   #geom_edge_density(aes(fill = n)) + 
@@ -42,30 +43,14 @@ p1 <- topic_pairs %>%
   geom_node_text(aes(label = name), repel = TRUE,
                  point.padding = unit(0.1, "lines"),
                  size = 3) +
-  theme_void()
+  theme_void() + 
+  labs(color = "Number \nof \npapers")
+p1
 
 pdf("../results/figures/topic_network_graph.pdf", 
     width = 6, height = 6)
 p1
 dev.off()
-
-# Linear layout.
-p2 <- topic_pairs %>%
-  #filter(n > 1) %>%
-  graph_from_data_frame() %>% 
-  ggraph(layout = 'linear', circular = FALSE) +
-  geom_edge_arc(aes(color = n, edge_alpha = n)) +
-  scale_color_viridis(option = "A") + 
-  geom_node_label(aes(label = name), repel = TRUE,
-                 point.padding = unit(0.2, "lines"),
-                 size = 2) +
-  theme_void()
-
-# pdf("../results/figures/topic_network_graphs.pdf",
-#     width = 12, height = 6)
-# plot_grid(p1, p2)
-# dev.off()
-
 
 # Pair with a heatmap - lots of garbage here to get factor levels right. 
 possible_pairs <- expand.grid(item1 = top_topics$topic,
@@ -83,7 +68,7 @@ plot_dat <- topic_pairs %>%
   mutate(item1 = fct_reorder(item1, item1_freq)) %>%
   mutate(item2 = fct_reorder(item2, item2_freq))
 
-p3 <- ggplot(plot_dat, aes(x = item1, y = item2,
+p2 <- ggplot(plot_dat, aes(x = item1, y = item2,
                         fill = n)) +
   geom_tile() + 
   scale_fill_gradient(name = "Count", trans = "log",
@@ -97,11 +82,11 @@ p3 <- ggplot(plot_dat, aes(x = item1, y = item2,
         axis.title = element_blank(),
         axis.line = element_blank(),
         axis.ticks = element_blank())
-p3
+p2
 
 pdf("../results/figures/topic_network_heatmap.pdf",
     width = 10, height = 6)
-p3
+p2
 dev.off()
 
 

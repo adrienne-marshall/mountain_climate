@@ -83,4 +83,43 @@ disc_dat %>%
   count(sort = T)
 sum(209, 165, 126, 110)/nrow(disc_dat)
 
+# Topic summary. -------------
+# Alphabetize. 
+dat <- dat %>% 
+  unnest_tokens(topic, topic, token = stringr::str_split, pattern = ", ") %>%
+  arrange(topic) %>% 
+  nest(topic) %>% 
+  mutate(topic = purrr::map(data, unlist)) %>% 
+  mutate(topic = map_chr(topic, paste, collapse = ", ")) %>% 
+  dplyr::select(-data)
+
+length(unique(dat$topic))
+
+topic_dat <- dat %>% 
+  unnest_tokens(topic, topic, token = stringr::str_split, pattern = ", ") %>% 
+  distinct(paper_id, topic, .keep_all = T)
+
+# There are no single-topic papers.
+
+# Most common topics:
+topic_dat %>% 
+  group_by(topic) %>% 
+  count(sort = T) %>% 
+  mutate(percent = 100*n/nrow(dat))
+
+# Most common topic combinations: 
+topic_dat %>%   
+  pairwise_count(topic, paper_id, sort = TRUE, upper = FALSE)
+
+# Not sure how informative this is, given topic frequencies...
+
+# Observed versus projected impacts ------------
+dat %>% 
+  filter(inclusion_IAM == "impacts") %>% 
+  mutate(implications = ifelse(projected == "no" & observed == "no", "yes", "no")) %>% 
+  dplyr::select(paper_id, projected, observed, implications) %>% 
+  gather(impact_type, value, -paper_id) %>% 
+  filter(value == "yes") %>% 
+  group_by(impact_type) %>% count()
+
 
