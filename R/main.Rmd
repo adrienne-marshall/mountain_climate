@@ -184,5 +184,14 @@ This could potentially get laid over a HUC6 map? Not sure the best way to integr
 file.edit("point_map.R")
 ```
 
+Write matrices to be used in factor/PCA analyses. 
+```{r create matrices}
+file.edit("make_matrices.R")
+```
+
+Make a bar graph of future versus observed impacts by discipline. 
+```{r future observed disciplines}
+file.edit("future_observed_disciplines.R")
+```
 
 
