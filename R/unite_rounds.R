@@ -119,12 +119,16 @@ dat <- dat %>%
                                 paper_id == "439" ~ "meteorology and climatology",
                                 TRUE ~ discipline)) %>% 
   unnest_tokens(discipline, discipline, token = stringr::str_split, pattern = ", ") %>% 
-  mutate(discipline = str_replace(discipline, "pedology|geology", "geology/pedology")) %>%
+  mutate(discipline = str_replace(discipline, "pedology", "geology")) %>%
   # mutate(discipline = str_replace(discipline, "biology|ecology", "biology/ecology")) %>%
   mutate(discipline = case_when(discipline %in% c("biogeoscience", "biogeochemistry") ~ "ecology",
                                 discipline == "management" ~ "policy or management",
                                 discipline == "law" ~ "policy or management",
-                                # discipline == "glaciology" ~ "hydrology",
+                                discipline == "glaciology" ~ "hydrology",
+                                str_detect(discipline, "anthropology/sociology") ~ "sociology",
+                                str_detect(discipline, "environmental chemistry") ~ "toxicology",
+                                str_detect(discipline, "management") ~ "policy",
+                                str_detect(discipline, "meteorology") ~ "climatology",
                                 TRUE ~ discipline)) %>% 
   nest(discipline) %>%
   mutate(discipline = purrr::map(data, unlist), 
